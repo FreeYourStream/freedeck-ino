@@ -1,5 +1,5 @@
 #include <SdFat.h>
-#include <MemoryFree.h>
+//#include <MemoryFree.h>
 #include <SPI.h>
 #include <Keyboard.h>
 #include <avr/power.h>
@@ -488,7 +488,6 @@ void loadPage(uint8_t pageIndex) {
         displayImage(pageIndex*BD_COUNT+j);
       }
     }    
-  }
 }
 void initAllDisplays() {
   for(uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++){
