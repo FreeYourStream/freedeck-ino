@@ -263,11 +263,6 @@ static void oledWriteDataBlock(unsigned char *ucBuf, int iLen)
     //////Serial.println(iLen);
     ucTemp[0] = 0x40; // data command
     memcpy(&ucTemp[1], ucBuf, iLen);
-    /*for(int i =0; i<17; i++) {
-      ucTemp[i+1] = ucBuf[i];
-      ////Serial.println(ucTemp[i+1]);
-      ////Serial.println(ucBuf[i]);
-    }*/
     I2CWrite(oled_addr, ucTemp, iLen + 1);
     // Keep a copy in local buffer
 #ifdef USE_BACKBUFFER
