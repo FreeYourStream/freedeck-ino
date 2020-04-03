@@ -28,6 +28,7 @@
 #define S0_PIN 7
 #define S1_PIN 8
 #define S2_PIN 9
+#define S3_PIN 10
 #define IMG_CACHE 256
 #define DELAY 0
 #define CONFIG_NAME "config.bin"
@@ -407,11 +408,23 @@ int getBitValue(int number, int place)
 void setMuxAddress(int address)
 {
   int S0 = getBitValue(address, 0);
-  int S1 = getBitValue(address, 1);
-  int S2 = getBitValue(address, 2);
   digitalWrite(S0_PIN, S0);
+  
+  #if BD_COUNT > 2
+  int S1 = getBitValue(address, 1);
   digitalWrite(S1_PIN, S1);
+  #endif
+  
+  #if BD_COUNT > 4
+  int S2 = getBitValue(address, 2);
   digitalWrite(S2_PIN, S2);
+  #endif
+  
+  #if BD_COUNT > 8
+  int S3 = getBitValue(address, 3);
+  digitalWrite(S3_PIN, S3);
+  #endif
+  
   delayMicroseconds(10);
 }
 
@@ -533,8 +546,15 @@ void setup()
   Keyboard.begin();
   pinMode(6, INPUT_PULLUP);
   pinMode(S0_PIN, OUTPUT);
+  #if BD_COUNT > 2
   pinMode(S1_PIN, OUTPUT);
+  #endif
+  #if BD_COUNT > 4
   pinMode(S2_PIN, OUTPUT);
+  #endif
+  #if BD_COUNT > 8
+  pinMode(S3_PIN, OUTPUT);
+  #endif
   initAllDisplays();
   initSdCard();
   loadPage(0);
