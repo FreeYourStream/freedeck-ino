@@ -343,12 +343,11 @@ int oledLoadBMPPart (uint8_t *pBMP, int bytes = 1024, int offset=0)
 {
     int y; // offset to bitmap data
     int iPitch = 128;
-    uint8_t ucTemp[iPitch]; // process 16 bytes at a time
-    // rotate the data and send it to the display
-    for (y = 0; y < (bytes/iPitch); y++) // 8 lines of 8 pixels
+    uint8_t factor = bytes/iPitch; //512/128 = 4
+    oledSetPosition(0, offset/16/8);
+    for (y = 0; y < factor; y++) // 8 lines of 8 pixels
     {
-        memcpy(ucTemp, &pBMP[y*iPitch], iPitch);
-        oledWriteDataBlock(ucTemp, iPitch);
+        oledWriteDataBlock(&pBMP[y*iPitch], iPitch);
     }     // for y
     //oledCachedFlush();
 } /* oledLoadBMP() */
@@ -517,6 +516,7 @@ void initSdCard() {
 void setup()
 {
   clock_prescale_set(clock_div_2);
+  Serial.begin(115200);
   delay(1500);
   Keyboard.begin();
   pinMode(6, INPUT_PULLUP);
