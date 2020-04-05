@@ -29,7 +29,7 @@
 #define S1_PIN 8
 #define S2_PIN 9
 #define S3_PIN 10
-#define IMG_CACHE 256
+#define IMG_CACHE 512
 #define DELAY 0
 #define CONFIG_NAME "config.bin"
 
@@ -276,7 +276,7 @@ static void oledSetPosition(int x, int y)
 //
 static void oledWriteDataBlock(unsigned char *ucBuf, int iLen)
 {
-    unsigned char ucTemp[17];
+    unsigned char ucTemp[iLen+1];
     //////Serial.println(iLen);
     ucTemp[0] = 0x40; // data command
     memcpy(&ucTemp[1], ucBuf, iLen);
@@ -339,41 +339,15 @@ void InvertBytes(uint8_t *pData, uint8_t bLen)
 // Pass the pointer to the beginning of the BMP file
 // First pass version assumes a full screen bitmap
 //
-int oledLoadBMPPart(uint8_t *pBMP, int bytes = 1024, int offset=0)
+int oledLoadBMPPart (uint8_t *pBMP, int bytes = 1024, int offset=0)
 {
-    int q, y, j; // offset to bitmap data
-    int iOffBits = 0;
-    int iPitch = 16;
-    uint8_t x, z, b, *s;
-    uint8_t dst_mask;
-    uint8_t ucTemp[16]; // process 16 bytes at a time
-    // rotate the data and send it to the display
-    for (y = 0; y < 8 / (1024/bytes); y++) // 8 lines of 8 pixels
+    int y; // offset to bitmap data
+    int iPitch = 128;
+    uint8_t factor = bytes/iPitch; //512/128 = 4
+    oledSetPosition(0, offset/16/8);
+    for (y = 0; y < factor; y++) // 8 lines of 8 pixels
     {
-        oledSetPosition(0, y+(offset/128));
-        for (j = 0; j < 8; j++) // do 8 sections of 16 columns
-        {
-            s = &pBMP[iOffBits+(j * 2) + (y * iPitch * 8)]; // source line
-            memset(ucTemp, 0, 16);                     // start with all black
-            for (x = 0; x < 16; x += 8)                       // do each block of 16x8 pixels
-            {
-                dst_mask = 1;
-                for (q = 0; q < 8; q++) // gather 8 rows
-                {
-                    b =  *(s + (q * iPitch));
-                    for (z = 0; z < 8; z++) // gather up the 8 bits of this column
-                    {
-                        if (b & 0x80)
-                            ucTemp[x + z] |= dst_mask;
-                        b <<= 1;
-                    } // for z
-                    dst_mask <<= 1;
-                }    // for q
-                s++; // next source uint8_t
-            }        // for x
-            oledWriteDataBlock(ucTemp, 16);
-            //oledCachedWrite(ucTemp, 16);
-        } // for j
+        oledWriteDataBlock(&pBMP[y*iPitch], iPitch);
     }     // for y
     //oledCachedFlush();
 } /* oledLoadBMP() */
@@ -542,6 +516,7 @@ void initSdCard() {
 void setup()
 {
   clock_prescale_set(clock_div_2);
+  Serial.begin(115200);
   delay(1500);
   Keyboard.begin();
   pinMode(6, INPUT_PULLUP);
