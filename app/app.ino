@@ -31,6 +31,7 @@
 #define S3_PIN 10
 #define IMG_CACHE 512
 #define DELAY 0
+#define BOOT_DELAY 0 // increase to 1500-1800 or higher if some displays dont startup right away
 #define CONFIG_NAME "config.bin"
 
 uint8_t currentPage = 0;
@@ -517,7 +518,7 @@ void setup()
 {
   clock_prescale_set(clock_div_2);
   Serial.begin(115200);
-  delay(1500);
+  delay(BOOT_DELAY);
   Keyboard.begin();
   pinMode(6, INPUT_PULLUP);
   pinMode(S0_PIN, OUTPUT);
