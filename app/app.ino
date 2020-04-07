@@ -29,29 +29,22 @@
 #define S1_PIN 8
 #define S2_PIN 9
 #define S3_PIN 10
-#define IMG_CACHE 512
+#define IMG_CACHE_SIZE 512
 #define DELAY 0
 #define BOOT_DELAY 0 // increase to 1500-1800 or higher if some displays dont startup right away
 #define CONFIG_NAME "config.bin"
 
-uint8_t currentPage = 0;
+unsigned short int currentPage = 0;
 unsigned short int offset = 0;
-unsigned char lul [IMG_CACHE];
+unsigned char buffer_fache [IMG_CACHE_SIZE];
 uint8_t up[BD_COUNT] = {1};
 //uint16_t downTime[BD_COUNT] = {1};
 uint8_t longPressed[BD_COUNT] = {0};
 SdFat SD;
 File configFile;
-//
-// Comment out this line to gain 1K of RAM and not use a backing buffer
-//
-//#define USE_BACKBUFFER
 
 // some globals
 static int iScreenOffset; // current write offset of screen data
-#ifdef USE_BACKBUFFER
-static unsigned char ucScreen[1024]; // local copy of the image buffer
-#endif
 static uint8_t oled_addr;
 #define MAX_CACHE 32
 static uint8_t bCache[MAX_CACHE] = {0x40}; // for faster character drawing
@@ -173,10 +166,6 @@ static void I2CWrite(int iAddr, unsigned char *pData, int iLen)
 static void oledCachedFlush(void)
 {
     I2CWrite(oled_addr, bCache, bEnd); // write the old data
-#ifdef USE_BACKBUFFER
-    memcpy(&ucScreen[iScreenOffset], &bCache[1], bEnd - 1);
-    iScreenOffset += (bEnd - 1);
-#endif
     bEnd = 1;
 } /* oledCachedFlush() */
 
@@ -283,10 +272,6 @@ static void oledWriteDataBlock(unsigned char *ucBuf, int iLen)
     memcpy(&ucTemp[1], ucBuf, iLen);
     I2CWrite(oled_addr, ucTemp, iLen + 1);
     // Keep a copy in local buffer
-#ifdef USE_BACKBUFFER
-    memcpy(&ucScreen[iScreenOffset], ucBuf, iLen);
-    iScreenOffset += iLen;
-#endif
 }
 
 // Set (or clear) an individual pixel
@@ -300,11 +285,8 @@ int oledSetPixel(int x, int y, unsigned char ucColor)
     i = ((y >> 3) * 128) + x;
     if (i < 0 || i > 1023) // off the screen
         return -1;
-#ifdef USE_BACKBUFFER
-    uc = ucOld = ucScreen[i];
-#else
+
     uc = ucOld = 0;
-#endif
 
     uc &= ~(0x1 << (y & 7));
     if (ucColor)
@@ -315,9 +297,6 @@ int oledSetPixel(int x, int y, unsigned char ucColor)
     {
         oledSetPosition(x, y >> 3);
         oledWriteDataBlock(&uc, 1);
-#ifdef USE_BACKBUFFER
-        ucScreen[i] = uc;
-#endif
     }
     return 0;
 } /* oledSetPixel() */
@@ -370,9 +349,6 @@ void oledFill(unsigned char ucData)
             oledWriteDataBlock(temp, 16);
         } // for x
     }     // for y
-#ifdef USE_BACKBUFFER
-    memset(ucScreen, ucData, 1024);
-#endif
 }
 
 int getBitValue(int number, int place)
@@ -403,15 +379,13 @@ void setMuxAddress(int address)
   delayMicroseconds(10);
 }
 
-void displayImage(unsigned int imageNumber) {
-  unsigned int imageOffset = offset + imageNumber*1024;
-  configFile.seek(imageOffset);
+void displayImage(uint8_t imageNumber) {
+  configFile.seekSet(offset+imageNumber * 1024L);
   uint8_t byteI = 0;
-  while(configFile.available() && byteI < (1024 / IMG_CACHE)){
-    configFile.read(lul, IMG_CACHE);
-    oledLoadBMPPart(lul, IMG_CACHE, byteI*IMG_CACHE);
+  while(configFile.available() && byteI < (1024 / IMG_CACHE_SIZE)){
+    configFile.read(buffer_fache, IMG_CACHE_SIZE);
+    oledLoadBMPPart(buffer_fache, IMG_CACHE_SIZE, byteI*IMG_CACHE_SIZE);
     byteI++;
-    delay(DELAY);
   }
 }
 
@@ -491,10 +465,8 @@ void loadPage(uint8_t pageIndex) {
 void initAllDisplays() {
   for(uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++){
     setMuxAddress(buttonIndex);
-    delay(DELAY);
     oledInit(0x3c, 0, 0);
     oledFill(255);
-    delay(DELAY);
    }
 }
 
