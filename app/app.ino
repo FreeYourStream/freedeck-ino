@@ -416,7 +416,9 @@ void executeButtonConfig(uint8_t buttonIndex, uint8_t buttonUp)
         configFile.read(&key, 1);
         delay(1);
       }
-    } else if (command == 0 && buttonUp == 1) {
+    }
+    else if (command == 0 && buttonUp == 1)
+    {
       Keyboard.releaseAll();
     }
     if (command == 2)
@@ -424,11 +426,15 @@ void executeButtonConfig(uint8_t buttonIndex, uint8_t buttonUp)
       //do nothing
     }
     // consumer keys
-    if (command == 3)
+    if (command == 3 && buttonUp == 0)
     {
       uint16_t key;
       configFile.read(&key, 2);
-      Consumer.write(key);
+      Consumer.press(key);
+    }
+    else if (command == 3 && buttonUp == 1)
+    {
+      Consumer.releaseAll();
     }
   }
 }
@@ -441,17 +447,17 @@ void checkButtonUp(uint8_t buttonIndex)
   {
     //if (state == BUTTON_UP)
     //{
-      if (longPressed[buttonIndex] == 1)
-      {
-        longPressed[buttonIndex] = 0;
-        //loadConfig(configIndex, buttonIndex);
-      }
-      else
-      {
-        executeButtonConfig(buttonIndex, state);
-      }
+    if (longPressed[buttonIndex] == 1)
+    {
+      longPressed[buttonIndex] = 0;
+      //loadConfig(configIndex, buttonIndex);
+    }
+    else
+    {
+      executeButtonConfig(buttonIndex, state);
+    }
     //} //else if(state == BUTTON_DOWN && longPressed[buttonIndex] == 0) {
-      //downTime[buttonIndex] = millis()/10;
+    //downTime[buttonIndex] = millis()/10;
     //}
   }
   up[buttonIndex] = state;
