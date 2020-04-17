@@ -408,15 +408,15 @@ void executeButtonConfig(uint8_t buttonIndex)
     // if 0 then send key commands
     if (command == 0)
     {
-      uint16_t key;
-      configFile.read(&key, 2);
+      uint8_t key;
+      configFile.read(&key, 1);
       while (key != 0)
       {
-        Keyboard.press(key);
-        configFile.read(&key, 2);
-        delay(5);
+        Keyboard.press(KeyboardKeycode(key));
+        configFile.read(&key, 1);
+        delay(1);
       }
-      delay(50);
+      delay(10);
       Keyboard.releaseAll();
     }
     if (command == 2)
