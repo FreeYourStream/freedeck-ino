@@ -30,6 +30,7 @@
 #define S3_PIN 10
 #define IMG_CACHE_SIZE 512
 #define DELAY 0
+#define LONG_PRESS_DURATION 300 / 2
 #define BOOT_DELAY 0 // increase to 1500-1800 or higher if some displays dont startup right away
 #define CONFIG_NAME "config.bin"
 
@@ -37,7 +38,7 @@ int currentPage = 0;
 unsigned short int offset = 0;
 unsigned char buffer_fache[IMG_CACHE_SIZE];
 uint8_t up[BD_COUNT] = {1};
-//uint16_t downTime[BD_COUNT] = {1};
+uint32_t downTime[BD_COUNT] = {0};
 uint8_t longPressed[BD_COUNT] = {0};
 SdFat SD;
 File configFile;
@@ -390,20 +391,94 @@ void displayImage(int16_t imageNumber)
   }
 }
 
-void executeButtonConfig(uint8_t buttonIndex, uint8_t buttonUp)
+void executeButtonConfig(uint8_t buttonIndex, uint8_t buttonUp, uint8_t secondary)
 {
   if (configFile)
   {
     // + 1 because of the 1 header row with 16 bytes
-    configFile.seek((BD_COUNT * currentPage + buttonIndex + 1) * 16);
+    configFile.seek((BD_COUNT * currentPage + buttonIndex + 1) * 16 + 8 * secondary);
     uint8_t command;
     command = configFile.read();
+
+    // same as 1 but with longpress support
+    if (command == 17)
+    {
+      if (buttonUp == 1)
+      {
+        if (longPressed[buttonIndex] == 1)
+        {
+          executeButtonConfig(buttonIndex, buttonUp, 1);
+          longPressed[buttonIndex] = 0;
+          downTime[buttonIndex] = 0;
+        }
+        else
+        {
+          longPressed[buttonIndex] = 0;
+          downTime[buttonIndex] = 0;
+          int16_t pageIndex;
+          configFile.read(&pageIndex, 2);
+          loadPage(pageIndex);
+        }
+      }
+      else if (buttonUp == 0)
+      {
+        if (longPressed[buttonIndex] == 1)
+        {
+          executeButtonConfig(buttonIndex, buttonUp, 1);
+        }
+        else
+        {
+          downTime[buttonIndex] = millis();
+        }
+      }
+    }
     // if 1 then open another page
     if (command == 1 && buttonUp == 0)
     {
       int16_t pageIndex;
       configFile.read(&pageIndex, 2);
       loadPage(pageIndex);
+    }
+    // same as 0 but with longpress support
+    if (command == 16)
+    {
+      if (buttonUp == 1)
+      {
+        // recover from longpress
+        if (longPressed[buttonIndex] == 1)
+        {
+          executeButtonConfig(buttonIndex, buttonUp, 1);
+          longPressed[buttonIndex] = 0;
+          downTime[buttonIndex] = 0;
+        }
+        else
+        { // execute primary behaviour
+          longPressed[buttonIndex] = 0;
+          downTime[buttonIndex] = 0;
+          uint8_t key;
+          configFile.read(&key, 1);
+          while (key != 0)
+          {
+            Keyboard.press(KeyboardKeycode(key));
+            configFile.read(&key, 1);
+            delay(1);
+          }
+          delay(25);
+          Keyboard.releaseAll();
+        }
+      }
+      else if (buttonUp == 0)
+      {
+        // execute secondary behaviour
+        if (longPressed[buttonIndex] == 1)
+        {
+          executeButtonConfig(buttonIndex, buttonUp, 1);
+        }
+        else
+        { // initiate longpress detection
+          downTime[buttonIndex] = millis();
+        }
+      }
     }
     // if 0 then send key commands
     if (command == 0 && buttonUp == 0)
@@ -421,9 +496,45 @@ void executeButtonConfig(uint8_t buttonIndex, uint8_t buttonUp)
     {
       Keyboard.releaseAll();
     }
+
     if (command == 2)
     {
       //do nothing
+    }
+    if (command == 19)
+    {
+      if (buttonUp == 1)
+      {
+        // recover from longpress
+        if (longPressed[buttonIndex] == 1)
+        {
+          executeButtonConfig(buttonIndex, buttonUp, 1);
+          longPressed[buttonIndex] = 0;
+          downTime[buttonIndex] = 0;
+        }
+        else
+        { // execute primary behaviour
+          longPressed[buttonIndex] = 0;
+          downTime[buttonIndex] = 0;
+          uint16_t key;
+          configFile.read(&key, 2);
+          Consumer.press(key);
+          delay(25);
+          Consumer.releaseAll();
+        }
+      }
+      else if (buttonUp == 0)
+      {
+        // execute secondary behaviour
+        if (longPressed[buttonIndex] == 1)
+        {
+          executeButtonConfig(buttonIndex, buttonUp, 1);
+        }
+        else
+        { // initiate longpress detection
+          downTime[buttonIndex] = millis();
+        }
+      }
     }
     // consumer keys
     if (command == 3 && buttonUp == 0)
@@ -438,46 +549,25 @@ void executeButtonConfig(uint8_t buttonIndex, uint8_t buttonUp)
     }
   }
 }
-void checkButtonUp(uint8_t buttonIndex)
+void checkButtonState(uint8_t buttonIndex)
 {
   setMuxAddress(buttonIndex);
   delay(1);
   uint8_t state = digitalRead(6);
-  if (state != up[buttonIndex])
+  uint32_t ms = millis();
+  uint32_t duration = ms - downTime[buttonIndex];
+  if (duration == ms)
+    duration = 0;
+  if (state != up[buttonIndex] || (duration >= LONG_PRESS_DURATION && longPressed[buttonIndex] == 0 && up[buttonIndex] == BUTTON_DOWN))
   {
-    //if (state == BUTTON_UP)
-    //{
-    if (longPressed[buttonIndex] == 1)
+    if (duration >= LONG_PRESS_DURATION)
     {
-      longPressed[buttonIndex] = 0;
-      //loadConfig(configIndex, buttonIndex);
+      longPressed[buttonIndex] = 1;
     }
-    else
-    {
-      executeButtonConfig(buttonIndex, state);
-    }
-    //} //else if(state == BUTTON_DOWN && longPressed[buttonIndex] == 0) {
-    //downTime[buttonIndex] = millis()/10;
-    //}
+    executeButtonConfig(buttonIndex, state, 0);
   }
   up[buttonIndex] = state;
 }
-
-/*void checkButtonLongPress(uint8_t buttonIndex) {
-  uint8_t state = digitalRead(7+buttonIndex);
-  if(state == 0 && !longPressed[buttonIndex]){
-    
-    uint16_t diff = (millis()/10)- downTime[buttonIndex];
-    ////Serial.println(diff);
-    if(diff >= 30) {
-      longPressed[buttonIndex] = 1;
-      //oledFill(0);
-      ////Serial.print("Available: ");
-      ////Serial.println(freeMemory());
-      oledWriteString(0,0,"ASD");
-    }
-  }
-}*/
 
 void loadPage(int16_t pageIndex)
 {
@@ -544,8 +634,6 @@ void loop()
 {
   for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++)
   {
-    checkButtonUp(buttonIndex);
-    //checkButtonLongPress(buttonIndex);
-    //delay(1);
+    checkButtonState(buttonIndex);
   }
 }
