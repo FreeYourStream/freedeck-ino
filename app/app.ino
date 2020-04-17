@@ -390,7 +390,7 @@ void displayImage(int16_t imageNumber)
   }
 }
 
-void executeButtonConfig(uint8_t buttonIndex)
+void executeButtonConfig(uint8_t buttonIndex, uint8_t buttonUp)
 {
   if (configFile)
   {
@@ -399,14 +399,14 @@ void executeButtonConfig(uint8_t buttonIndex)
     uint8_t command;
     command = configFile.read();
     // if 1 then open another page
-    if (command == 1)
+    if (command == 1 && buttonUp == 0)
     {
       int16_t pageIndex;
       configFile.read(&pageIndex, 2);
       loadPage(pageIndex);
     }
     // if 0 then send key commands
-    if (command == 0)
+    if (command == 0 && buttonUp == 0)
     {
       uint8_t key;
       configFile.read(&key, 1);
@@ -416,7 +416,7 @@ void executeButtonConfig(uint8_t buttonIndex)
         configFile.read(&key, 1);
         delay(1);
       }
-      delay(10);
+    } else if (command == 0 && buttonUp == 1) {
       Keyboard.releaseAll();
     }
     if (command == 2)
@@ -439,8 +439,8 @@ void checkButtonUp(uint8_t buttonIndex)
   uint8_t state = digitalRead(6);
   if (state != up[buttonIndex])
   {
-    if (state == BUTTON_DOWN)
-    {
+    //if (state == BUTTON_UP)
+    //{
       if (longPressed[buttonIndex] == 1)
       {
         longPressed[buttonIndex] = 0;
@@ -448,9 +448,9 @@ void checkButtonUp(uint8_t buttonIndex)
       }
       else
       {
-        executeButtonConfig(buttonIndex);
+        executeButtonConfig(buttonIndex, state);
       }
-    } //else if(state == BUTTON_DOWN && longPressed[buttonIndex] == 0) {
+    //} //else if(state == BUTTON_DOWN && longPressed[buttonIndex] == 0) {
       //downTime[buttonIndex] = millis()/10;
     //}
   }
