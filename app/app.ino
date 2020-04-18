@@ -40,6 +40,7 @@ unsigned char buffer_fache[IMG_CACHE_SIZE];
 uint8_t up[BD_COUNT] = {1};
 uint32_t downTime[BD_COUNT] = {0};
 uint8_t longPressed[BD_COUNT] = {0};
+uint8_t pageChanged = 0;
 SdFat SD;
 File configFile;
 
@@ -243,7 +244,6 @@ static void oledSetPosition(int x, int y) {
 //
 static void oledWriteDataBlock(unsigned char *ucBuf, int iLen) {
 	unsigned char ucTemp[iLen + 1];
-	//////Serial.println(iLen);
 	ucTemp[0] = 0x40; // data command
 	memcpy(&ucTemp[1], ucBuf, iLen);
 	I2CWrite(oled_addr, ucTemp, iLen + 1);
@@ -360,6 +360,10 @@ void executeButtonConfig(uint8_t buttonIndex, uint8_t buttonUp, uint8_t secondar
 		uint8_t command;
 		command = configFile.read();
 		if (buttonUp == 1) {
+			if (pageChanged) {
+				pageChanged = 0;
+				return;
+			}
 			if (command == 0) {
 				Keyboard.releaseAll();
 			} else if (command == 3) {
@@ -367,7 +371,6 @@ void executeButtonConfig(uint8_t buttonIndex, uint8_t buttonUp, uint8_t secondar
 			}
 			if (command >= 16) {
 				if (longPressed[buttonIndex] == 1) {
-					Serial.println("LONG UP");
 					executeButtonConfig(buttonIndex, buttonUp, 1);
 					longPressed[buttonIndex] = 0;
 					downTime[buttonIndex] = 0;
@@ -401,6 +404,7 @@ void executeButtonConfig(uint8_t buttonIndex, uint8_t buttonUp, uint8_t secondar
 			if (command == 1) {
 				int16_t pageIndex;
 				configFile.read(&pageIndex, 2);
+				pageChanged = 1;
 				loadPage(pageIndex);
 			} else if (command == 0) {
 				uint8_t key;
@@ -417,7 +421,6 @@ void executeButtonConfig(uint8_t buttonIndex, uint8_t buttonUp, uint8_t secondar
 			}
 			if (command >= 16) {
 				if (longPressed[buttonIndex] == 1) {
-					Serial.println("LONG");
 					executeButtonConfig(buttonIndex, buttonUp, 1);
 				} else {
 					downTime[buttonIndex] = millis();
