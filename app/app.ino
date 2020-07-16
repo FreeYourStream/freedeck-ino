@@ -290,7 +290,7 @@ void InvertBytes(uint8_t *pData, uint8_t bLen) {
 // Pass the pointer to the beginning of the BMP file
 // First pass version assumes a full screen bitmap
 //
-int oledLoadBMPPart(uint8_t *pBMP, int bytes = 1024, int offset = 0) {
+void oledLoadBMPPart(uint8_t *pBMP, int bytes = 1024, int offset = 0) {
 	int y; // offset to bitmap data
 	int iPitch = 128;
 	uint8_t factor = bytes / iPitch; //512/128 = 4
