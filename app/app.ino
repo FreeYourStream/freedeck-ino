@@ -362,6 +362,8 @@ void executeButtonConfig(uint8_t buttonIndex, uint8_t buttonUp, uint8_t secondar
 		if (buttonUp == 1) {
 			if (pageChanged) {
 				pageChanged = 0;
+				longPressed[buttonIndex] = 0;
+				downTime[buttonIndex] = 0;
 				return;
 			}
 			if (command == 0) {
