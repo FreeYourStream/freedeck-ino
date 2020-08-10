@@ -48,7 +48,7 @@
   Command out the line #define KEYWRAPPING if you dont wanna use it!
 
 */
-#define KEYWRAPPING
+//#define KEYWRAPPING
 #define KEYWRAP_KEY KEY_F24
 
 int currentPage = 0;
