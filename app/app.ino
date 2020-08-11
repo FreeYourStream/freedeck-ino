@@ -1,5 +1,5 @@
-//    freedeck arduino code for flashing to atmega32u4 based arduinos and compatible
-//   Copyright (C) 2020  Kilian Gosewisch
+//    Freedeck arduino code for flashing to atmega32u4 based arduinos and compatible
+//    Copyright (C) 2020  Kilian Gosewisch
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -183,6 +183,7 @@ static void oledCachedWrite(uint8_t *pData, uint8_t bLen) {
   bEnd += bLen;
 
 } /* oledCachedWrite() */
+
 //
 // Initializes the OLED controller into "page mode"
 //
@@ -213,6 +214,7 @@ void oledInit(uint8_t bAddr, int bFlip, int bInvert) {
     I2CWrite(oled_addr, uc, 2);
   }
 } /* oledInit() */
+
 //
 // Sends a command to turn off the OLED display
 //
@@ -479,6 +481,7 @@ void loadPage(int16_t pageIndex) {
     displayImage(pageIndex * BD_COUNT + j);
   }
 }
+
 void initAllDisplays() {
   for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
     setMuxAddress(buttonIndex);
