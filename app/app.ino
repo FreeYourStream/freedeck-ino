@@ -404,10 +404,10 @@ void executeButtonConfig(uint8_t buttonIndex, uint8_t buttonUp, uint8_t secondar
           } else if (command == 16) {
             uint8_t key;
             configFile.read(&key, 1);
-            while (key != 0) {
 #ifdef KEYWRAPPING
-              Keyboard.press(KEYWRAP_KEY);
+            Keyboard.press(KEYWRAP_KEY);
 #endif
+            while (key != 0) {
               Keyboard.press(KeyboardKeycode(key));
               configFile.read(&key, 1);
               delay(1);
@@ -432,10 +432,10 @@ void executeButtonConfig(uint8_t buttonIndex, uint8_t buttonUp, uint8_t secondar
       } else if (command == 0) {
         uint8_t key;
         configFile.read(&key, 1);
-        while (key != 0) {
 #ifdef KEYWRAPPING
-          Keyboard.press(KEYWRAP_KEY);
+        Keyboard.press(KEYWRAP_KEY);
 #endif
+        while (key != 0) {
           Keyboard.press(KeyboardKeycode(key));
           configFile.read(&key, 1);
           delay(1);
