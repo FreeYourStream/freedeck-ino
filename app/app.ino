@@ -28,7 +28,8 @@
 #define S1_PIN 8
 #define S2_PIN 9
 #define S3_PIN 10
-#define IMG_CACHE_SIZE 512
+// try different values here. good displays can go higher. 512 for example. worse need to go lower. 64 for example
+#define IMG_CACHE_SIZE 128
 #define DELAY 0
 #define LONG_PRESS_DURATION 300 / 2
 #define BOOT_DELAY 0 // increase to 1500-1800 or higher if some displays dont startup right away
