@@ -28,8 +28,7 @@
 #define S1_PIN 8
 #define S2_PIN 9
 #define S3_PIN 10
-// try different values here. good displays can go higher. 512 for example. worse need to go lower. 64 for example
-#define IMG_CACHE_SIZE 128
+#define IMG_CACHE_SIZE 128// try different values here. good displays can go higher. 512 for example. worse need to go lower. 64 for example
 #define DELAY 0
 #define LONG_PRESS_DURATION 300 / 2
 #define BOOT_DELAY 0 // increase to 1500-1800 or higher if some displays dont startup right away
@@ -62,15 +61,13 @@ static void oledWriteCommand(unsigned char c);
 #define BB_SDA 2
 #define BB_SCL 3
 
-#ifdef F_CPU
-#undef F_CPU
-#define F_CPU 8000000L
-#endif
 #if F_CPU > 8000000L
-#define I2C_CLK_LOW() I2CPORT &= ~(1 << BB_SCL) //compiles to cbi instruction taking 2 clock cycles, extending the clock pulse
+#define I2C_DELAY 2
 #else
-#define I2C_CLK_LOW() I2CPORT = bOld //setting a port instruction takes 1 clock cycle
+#define I2C_DELAY 0
 #endif
+
+#define I2C_CLK_LOW() I2CPORT = bOld //setting a port instruction takes 1 clock cycle
 
 //
 // Transmit a uint8_t and ack bit
@@ -83,13 +80,17 @@ static inline void i2cByteOut(uint8_t b) {
 		if (b & 0x80)
 			bOld |= (1 << BB_SDA);
 		I2CPORT = bOld;
+    delayMicroseconds(I2C_DELAY);
 		I2CPORT |= (1 << BB_SCL);
-		I2C_CLK_LOW();
+    delayMicroseconds(I2C_DELAY);
+    I2C_CLK_LOW();
 		b <<= 1;
 	}								 // for i
 									 // ack bit
 	I2CPORT = bOld & ~(1 << BB_SDA); // set data low
+  delayMicroseconds(I2C_DELAY);
 	I2CPORT |= (1 << BB_SCL);		 // toggle clock
+  delayMicroseconds(I2C_DELAY);
 	I2C_CLK_LOW();
 } /* i2cByteOut() */
 
@@ -112,9 +113,11 @@ void i2cWrite(uint8_t *pData, uint8_t bLen) {
 			if (b & 0x80)
 				bOld |= (1 << BB_SDA);
 			I2CPORT = bOld;
+      delayMicroseconds(I2C_DELAY);
 			for (i = 0; i < 8; i++) {
 				I2CPORT |= (1 << BB_SCL); // just toggle SCL, SDA stays the same
-				I2C_CLK_LOW();
+        delayMicroseconds(I2C_DELAY);
+        I2C_CLK_LOW();
 			}	 // for i
 		} else { // normal uint8_t needs every bit tested
 			for (i = 0; i < 8; i++) {
@@ -124,8 +127,10 @@ void i2cWrite(uint8_t *pData, uint8_t bLen) {
 					bOld |= (1 << BB_SDA);
 
 				I2CPORT = bOld;
+        delayMicroseconds(I2C_DELAY);
 				I2CPORT |= (1 << BB_SCL);
-				I2C_CLK_LOW();
+        delayMicroseconds(I2C_DELAY);
+        I2C_CLK_LOW();
 				b <<= 1;
 			} // for i
 		}
@@ -434,7 +439,7 @@ void executeButtonConfig(uint8_t buttonIndex, uint8_t buttonUp, uint8_t secondar
 }
 void checkButtonState(uint8_t buttonIndex) {
 	setMuxAddress(buttonIndex);
-	delay(1);
+	//delay(1);
 	uint8_t state = digitalRead(6);
 	uint32_t ms = millis();
 	uint32_t duration = ms - downTime[buttonIndex];
@@ -480,9 +485,22 @@ void initSdCard() {
 	offset = offset * 16;
 }
 
+void dumpConfigFileOverSerial() {
+  configFile.seekSet(0);
+  if(configFile.available()) {
+    Serial.println(configFile.fileSize());
+    byte buff[512];
+    int available;
+    do {
+      available = configFile.read(buff, 512);
+      Serial.write(buff, 512);
+    } while(available>=512);
+
+  }
+}
+
 void setup() {
-	clock_prescale_set(clock_div_2);
-	Serial.begin(115200);
+	Serial.begin(4000000);
 	delay(BOOT_DELAY);
 	Keyboard.begin();
 	Consumer.begin();
@@ -498,11 +516,13 @@ void setup() {
 	pinMode(S3_PIN, OUTPUT);
 #endif
 	initAllDisplays();
+  	oledSetContrast(255);
 	initSdCard();
 	loadPage(0);
 }
 
 void loop() {
+  if(Serial.read() == 1) dumpConfigFileOverSerial();
 	for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
 		checkButtonState(buttonIndex);
 	}
