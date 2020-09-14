@@ -464,9 +464,21 @@ void loadPage(int16_t pageIndex) {
 void initAllDisplays() {
 	for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
 		setMuxAddress(buttonIndex);
+    delay(1);
 		oledInit(0x3c, 0, 0);
 		oledFill(255);
 	}
+}
+
+void setGlobalContrast() {
+  unsigned short c;
+  configFile.seekSet(4);
+  c = configFile.read();
+  for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
+    setMuxAddress(buttonIndex);
+    delay(1);
+    oledSetContrast(c);
+  }
 }
 
 void initSdCard() {
@@ -516,8 +528,9 @@ void setup() {
 	pinMode(S3_PIN, OUTPUT);
 #endif
 	initAllDisplays();
-  	oledSetContrast(255);
+  delay(100);
 	initSdCard();
+  setGlobalContrast();
 	loadPage(0);
 }
 
