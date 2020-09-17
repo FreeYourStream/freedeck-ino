@@ -1,0 +1,22 @@
+{
+  "configurations": [
+    {
+      "name": "Linux",
+      "includePath": [
+        "${workspaceFolder}/**",
+        "/home/koriwi/Arduino/libraries/HID-Project/src",
+        "/home/koriwi/Arduino/libraries/SdFat/src",
+        "/home/koriwi/.arduino15/packages/arduino/hardware/avr/1.8.3/libraries/SPI/src",
+        "/home/koriwi/.arduino15/packages/arduino/hardware/avr/1.8.3/cores/arduino/",
+        "/home/koriwi/.arduino15/packages/arduino/tools/avr-gcc/7.3.0-atmel3.6.1-arduino7/avr/include/",
+        "/home/koriwi/.arduino15/packages/arduino/hardware/avr/1.8.3/variants/leonardo/"
+      ],
+      "defines": [],
+      "compilerPath": "/usr/bin/clang",
+      "cStandard": "c11",
+      "cppStandard": "c++14",
+      "intelliSenseMode": "${default}"
+    }
+  ],
+  "version": 4
+}
