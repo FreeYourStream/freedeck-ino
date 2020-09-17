@@ -35,7 +35,7 @@
 // example. worse need to go lower. 64 for example
 #define IMG_CACHE_SIZE 128
 #define DELAY 0
-#define LONG_PRESS_DURATION 300 / 2
+#define LONG_PRESS_DURATION 300
 // increase to 1500-1800 or higher if some displays dont
 // startup right
 // away
@@ -525,7 +525,7 @@ void dumpConfigFileOverSerial() {
 }
 
 void renameConfigFile() {
-	char *path = "config.bak";
+	char const *path = "config.bak";
 	if (SD.exists(path)) {
 		SD.remove(path);
 	}
@@ -534,9 +534,6 @@ void renameConfigFile() {
 
 void saveNewConfigFileFromSerial() {
 	configFile = SD.open(CONFIG_NAME, O_WRONLY | O_CREAT);
-	// Serial.setTimeout(500);
-	// String fileSizeString = Serial.readStringUntil(13);
-	double fileSize = 0;  // fileSizeString.toDouble();
 	long bytes = 0;
 	char numberChars[10];
 	FILL_BUFFER();
@@ -545,16 +542,17 @@ void saveNewConfigFileFromSerial() {
 		numberChars[fileSizeLoopCounter++] = Serial.read();
 	};
 	numberChars[9] = '\n';
-
-	fileSize = atoi(numberChars);
-	Serial.println(numberChars);
+	long fileSize = atol(numberChars);
+	unsigned int length;
 	FILL_BUFFER();
-	while (bytes < fileSize) {
+	do {
+		unsigned int batchI = 0;
 		FILL_BUFFER();
-		byte read = Serial.read();
-		configFile.write(read);
-		bytes++;
-	};
+		byte input[512];
+		length = Serial.readBytes(input, 512);
+		if (length != 0) configFile.write(input, length);
+
+	} while (length == 512);
 	configFile.sync();
 	configFile.close();
 }
