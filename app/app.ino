@@ -485,6 +485,7 @@ void setGlobalContrast() {
 	unsigned short c;
 	configFile.seekSet(4);
 	c = configFile.read();
+	if (c == 0) c = 1;
 	for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
 		setMuxAddress(buttonIndex);
 		delay(1);
