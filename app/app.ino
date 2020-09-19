@@ -43,7 +43,6 @@
 #define CONFIG_NAME "config.bin"
 #define MAX_CACHE 32
 
-#define DIRECT_PORT
 #define I2CPORT PORTD
 // A bit set to 1 in the DDR is an output, 0 is an INPUT
 #define I2CDDR DDRD
@@ -106,7 +105,8 @@ static inline void i2cByteOut(uint8_t b) {
 void i2cBegin(uint8_t addr) {
 	I2CPORT |= ((1 << BB_SDA) + (1 << BB_SCL));
 	I2CDDR |= ((1 << BB_SDA) + (1 << BB_SCL));
-	I2CPORT &= ~(1 << BB_SDA);	// data line low first
+	I2CPORT &= ~(1 << BB_SDA);				 // data line low first
+	delayMicroseconds((I2C_DELAY + 1) * 2);	 // compatibility reasons
 	I2CPORT &= ~(1 << BB_SCL);	// then clock line low is a START signal
 	i2cByteOut(addr << 1);		// send the slave address
 } /* i2cBegin() */
@@ -167,19 +167,6 @@ static void I2CWrite(int iAddr, unsigned char *pData, int iLen) {
 	i2cEnd();
 } /* I2CWrite() */
 
-static void oledCachedFlush(void) {
-	I2CWrite(oled_addr, bCache, bEnd);	// write the old data
-	bEnd = 1;
-} /* oledCachedFlush() */
-
-static void oledCachedWrite(uint8_t *pData, uint8_t bLen) {
-	if (bEnd + bLen > MAX_CACHE)  // need to flush it
-		oledCachedFlush();		  // write the old data
-
-	memcpy(&bCache[bEnd], pData, bLen);
-	bEnd += bLen;
-
-} /* oledCachedWrite() */
 //
 // Initializes the OLED controller into "page mode"
 //
@@ -193,6 +180,7 @@ void oledInit(uint8_t bAddr, int bFlip, int bInvert) {
 	I2CDDR &= ~(1 << BB_SDA);
 	I2CDDR &= ~(1 << BB_SCL);  // let them float high
 	I2CPORT |= (1 << BB_SDA);  // set both lines to get pulled up
+	// delayMicroseconds(I2C_DELAY); // compatibility reasons
 	I2CPORT |= (1 << BB_SCL);
 
 	I2CWrite(oled_addr, oled_initbuf, sizeof(oled_initbuf));
@@ -289,17 +277,6 @@ int oledSetPixel(int x, int y, unsigned char ucColor) {
 } /* oledSetPixel() */
 
 //
-// Invert font data
-//
-void InvertBytes(uint8_t *pData, uint8_t bLen) {
-	uint8_t i;
-	for (i = 0; i < bLen; i++) {
-		*pData = ~(*pData);
-		pData++;
-	}
-} /* InvertBytes() */
-
-//
 // Load a 128x64 1-bpp Windows bitmap
 // Pass the pointer to the beginning of the BMP file
 // First pass version assumes a full screen bitmap
@@ -354,7 +331,7 @@ void setMuxAddress(int address) {
 	digitalWrite(S3_PIN, S3);
 #endif
 
-	delayMicroseconds(10);
+	delayMicroseconds(100);	 // wait for multiplexer to switch
 }
 
 void displayImage(int16_t imageNumber) {
@@ -449,7 +426,6 @@ void executeButtonConfig(uint8_t buttonIndex, uint8_t buttonUp,
 }
 void checkButtonState(uint8_t buttonIndex) {
 	setMuxAddress(buttonIndex);
-	// delay(1);
 	uint8_t state = digitalRead(6);
 	uint32_t ms = millis();
 	uint32_t duration = ms - downTime[buttonIndex];
@@ -469,11 +445,15 @@ void loadPage(int16_t pageIndex) {
 	currentPage = pageIndex;
 	for (uint8_t j = 0; j < BD_COUNT; j++) {
 		setMuxAddress(j);
+		delay(1);
 		displayImage(pageIndex * BD_COUNT + j);
 	}
 }
 void initAllDisplays() {
 	for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
+		up[buttonIndex] = 1;
+		downTime[buttonIndex] = 0;
+		longPressed[buttonIndex] = 0;
 		setMuxAddress(buttonIndex);
 		delay(1);
 		oledInit(0x3c, 0, 0);
