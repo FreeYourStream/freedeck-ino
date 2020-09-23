@@ -19,6 +19,7 @@
 #include <SdFat.h>
 #include <avr/power.h>
 
+#include "./settings.h"
 #include "HID-Project.h"
 
 #define BUTTON_DOWN 0
@@ -301,7 +302,7 @@ void setMuxAddress(int address) {
 	digitalWrite(S3_PIN, S3);
 #endif
 
-	delayMicroseconds(100);	 // wait for multiplexer to switch
+	delay(1);  // wait for multiplexer to switch
 }
 
 void displayImage(int16_t imageNumber) {
@@ -381,9 +382,10 @@ void executeButtonConfig(uint8_t buttonIndex, uint8_t buttonUp,
 				pageChanged = 1;
 				loadPage(pageIndex);
 			} else if (command == 0) {
+				byte i = 0;
 				uint8_t key;
 				configFile.read(&key, 1);
-				while (key != 0) {
+				while (key != 0 && i++ < 7) {
 					Keyboard.press(KeyboardKeycode(key));
 					configFile.read(&key, 1);
 					delay(1);
@@ -392,6 +394,19 @@ void executeButtonConfig(uint8_t buttonIndex, uint8_t buttonUp,
 				uint16_t key;
 				configFile.read(&key, 2);
 				Consumer.press(key);
+			} else if (command == 4) {
+				byte i = 0;
+				uint8_t key;
+				configFile.read(&key, 1);
+				while (key != 0 && i++ < 15) {
+					Keyboard.press(KeyboardKeycode(key));
+					delay(8);
+					if (key < 224) {
+						Keyboard.releaseAll();
+					}
+					configFile.read(&key, 1);
+				}
+				Keyboard.releaseAll();
 			}
 			if (command >= 16) {
 				if (longPressed[buttonIndex] == 1) {
@@ -454,7 +469,7 @@ void loadConfigFile() {
 void initSdCard() {
 	int i = 0;
 	//, SD_SCK_MHZ(50)
-	while (!SD.begin(SD_CS_PIN, SD_SCK_MHZ(250)) && i <= 100) {
+	while (!SD.begin(SD_CS_PIN, SD_SCK_MHZ(50)) && i <= 100) {
 		i++;
 	}
 	if (i == 100) {
