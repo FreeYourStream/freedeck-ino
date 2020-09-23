@@ -17,8 +17,9 @@
 
 // button display count
 // increase if your freedeck has more displays
-
-#include "./lib.h"
+#include <HID-Project.h>
+#include "./settings.h"
+#include "./src/FreeDeck.h"
 
 void setup() {
 	Serial.begin(4000000);
