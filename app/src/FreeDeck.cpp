@@ -15,6 +15,7 @@ File configFile;
 
 int currentPage = 0;
 unsigned short int fileImageDataOffset = 0;
+short int contrast = 0;
 unsigned char imageCache[IMG_CACHE_SIZE];
 uint8_t buttonIsUp[BD_COUNT] = {1};
 uint32_t downTime[BD_COUNT] = {0};
@@ -45,6 +46,67 @@ void setMuxAddress(int address) {
 #endif
 
 	delay(1);  // wait for multiplexer to switch
+}
+
+
+void setGlobalContrast(unsigned short c) {
+	if (c == 0) c = 1;
+	contrast = c;
+	for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
+		setMuxAddress(buttonIndex);
+		delay(1);
+		oledSetContrast(c);
+	}
+}
+
+void setSetting () {
+	uint8_t settingCommand;
+	configFile.read(&settingCommand, 1);
+	if(settingCommand == 1) {
+		contrast = max(contrast - 20, 1);
+		setGlobalContrast(contrast);
+	} else if(settingCommand == 2) {
+		contrast = min(contrast + 20, 255);
+		setGlobalContrast(contrast);
+	}
+}
+
+void pressKeys () {
+	byte i = 0;
+	uint8_t key;
+	configFile.read(&key, 1);
+	while (key != 0 && i++ < 7) {
+		Keyboard.press(KeyboardKeycode(key));
+		configFile.read(&key, 1);
+		delay(1);
+	}
+}
+
+void sendText () {
+	byte i = 0;
+	uint8_t key;
+	configFile.read(&key, 1);
+	while (key != 0 && i++ < 15) {
+		Keyboard.press(KeyboardKeycode(key));
+		delay(8);
+		if (key < 224) {
+			Keyboard.releaseAll();
+		}
+		configFile.read(&key, 1);
+	}
+	Keyboard.releaseAll();
+}
+
+void changePage () {
+	int16_t pageIndex;
+	configFile.read(&pageIndex, 2);
+	loadPage(pageIndex);
+}
+
+void pressSpecialKey () {
+	uint16_t key;
+	configFile.read(&key, 2);
+	Consumer.press(key);
 }
 
 void displayImage(int16_t imageNumber) {
@@ -95,60 +157,34 @@ void executeButtonConfig(uint8_t buttonIndex, uint8_t buttonUp,
 					longPressed[buttonIndex] = 0;
 					downTime[buttonIndex] = 0;
 					if (command == 17) {
-						int16_t pageIndex;
-						configFile.read(&pageIndex, 2);
-						loadPage(pageIndex);
+						changePage();
 					} else if (command == 16) {
-						uint8_t key;
-						configFile.read(&key, 1);
-						while (key != 0) {
-							Keyboard.press(KeyboardKeycode(key));
-							configFile.read(&key, 1);
-							delay(1);
-						}
+						pressKeys();
 						delay(25);
 						Keyboard.releaseAll();
 					} else if (command == 19) {
-						uint16_t key;
-						configFile.read(&key, 2);
-						Consumer.press(key);
+						pressSpecialKey();
 						delay(25);
 						Consumer.releaseAll();
+					} else if (command == 20) {
+						sendText();
+					} else if (command == 21) {
+						setSetting();
 					}
 				}
 			}
 		} else if (buttonUp == 0) {
 			if (command == 1) {
-				int16_t pageIndex;
-				configFile.read(&pageIndex, 2);
 				pageChanged = 1;
-				loadPage(pageIndex);
+				changePage();
 			} else if (command == 0) {
-				byte i = 0;
-				uint8_t key;
-				configFile.read(&key, 1);
-				while (key != 0 && i++ < 7) {
-					Keyboard.press(KeyboardKeycode(key));
-					configFile.read(&key, 1);
-					delay(1);
-				}
+				pressKeys();
 			} else if (command == 3) {
-				uint16_t key;
-				configFile.read(&key, 2);
-				Consumer.press(key);
+				pressSpecialKey();
 			} else if (command == 4) {
-				byte i = 0;
-				uint8_t key;
-				configFile.read(&key, 1);
-				while (key != 0 && i++ < 15) {
-					Keyboard.press(KeyboardKeycode(key));
-					delay(8);
-					if (key < 224) {
-						Keyboard.releaseAll();
-					}
-					configFile.read(&key, 1);
-				}
-				Keyboard.releaseAll();
+				sendText();
+			} else if (command == 5) {
+				setSetting();
 			}
 			if (command >= 16) {
 				if (longPressed[buttonIndex] == 1) {
@@ -189,17 +225,6 @@ void initAllDisplays() {
 	}
 }
 
-void setGlobalContrast() {
-	unsigned short c;
-	configFile.seekSet(4);
-	c = configFile.read();
-	if (c == 0) c = 1;
-	for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
-		setMuxAddress(buttonIndex);
-		delay(1);
-		oledSetContrast(c);
-	}
-}
 
 void loadConfigFile() {
 	configFile = SD.open(CONFIG_NAME, FILE_READ);
@@ -268,6 +293,7 @@ void saveNewConfigFileFromSerial() {
 
 void postSetup() {
 	loadConfigFile();
-	setGlobalContrast();
+	configFile.seekSet(4);
+	setGlobalContrast(configFile.read());
 	loadPage(0);
 }
