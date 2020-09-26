@@ -62,12 +62,15 @@ void setGlobalContrast(unsigned short c) {
 void setSetting () {
 	uint8_t settingCommand;
 	configFile.read(&settingCommand, 1);
-	if(settingCommand == 1) {
+	if(settingCommand == 1) { // decrease brightness
 		contrast = max(contrast - 20, 1);
 		setGlobalContrast(contrast);
-	} else if(settingCommand == 2) {
+	} else if(settingCommand == 2) { // increase brightness
 		contrast = min(contrast + 20, 255);
 		setGlobalContrast(contrast);
+	} else if(settingCommand == 3) { // set brightness
+		contrast = min(contrast + 20, 255);
+		setGlobalContrast(configFile.read());
 	}
 }
 
