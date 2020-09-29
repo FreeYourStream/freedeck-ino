@@ -296,11 +296,11 @@ void saveNewConfigFileFromSerial() {
 	unsigned int chunkLength;
 	FILL_BUFFER();
 	do {
-		unsigned int batchI = 0;
 		FILL_BUFFER();
 		byte input[512];
 		chunkLength = Serial.readBytes(input, 512);
 		receivedBytes += chunkLength;
+		Serial.println(receivedBytes);
 		if (chunkLength != 0) configFile.write(input, chunkLength);
 
 	} while (chunkLength == 512);
