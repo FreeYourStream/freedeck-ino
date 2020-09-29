@@ -26,6 +26,10 @@
 #define CONFIG_NAME "config.bin"
 #define MAX_CACHE 32
 
+// Change this value from 0x11 up to 0xff to reduce coil whine. different
+// from display to display
+#define PRE_CHARGE_PERIOD 0x11
+
 // Pin or port numbers for SDA and SCL
 // NOT THE ARDUINO PORT NUMBERS
 #define BB_SDA 2  // ARDUINO:RX_PIN:D0 32U4:20:PD2

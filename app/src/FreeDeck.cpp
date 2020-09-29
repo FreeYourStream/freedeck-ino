@@ -261,17 +261,23 @@ void dumpConfigFileOverSerial() {
 	}
 }
 
-void renameConfigFile() {
-	char const *path = "config.bak";
+void renameConfigFile(char const *path) {
 	if (SD.exists(path)) {
 		SD.remove(path);
 	}
 	configFile.rename(SD.vwd(), path);
 }
 
-void saveNewConfigFileFromSerial() {
-	configFile = SD.open(CONFIG_NAME, O_WRONLY | O_CREAT);
-	long bytes = 0;
+void _openTempFile() {
+	char const *tempFile = strcat(CONFIG_NAME, ".tmp");
+	if (SD.exists(tempFile)) {
+		SD.remove(tempFile);
+	}
+	configFile = SD.open(tempFile, O_WRONLY | O_CREAT);
+	configFile.seekSet(0);
+}
+
+long _getSerialFileSize() {
 	char numberChars[10];
 	FILL_BUFFER();
 	byte fileSizeLoopCounter = 0;
@@ -279,19 +285,31 @@ void saveNewConfigFileFromSerial() {
 		numberChars[fileSizeLoopCounter++] = Serial.read();
 	};
 	numberChars[9] = '\n';
-	long fileSize = atol(numberChars);
-	unsigned int length;
+	return atol(numberChars);
+}
+
+void saveNewConfigFileFromSerial() {
+	_openTempFile();
+	long fileSize = _getSerialFileSize();
+
+	long receivedBytes = 0;
+	unsigned int chunkLength;
 	FILL_BUFFER();
 	do {
 		unsigned int batchI = 0;
 		FILL_BUFFER();
 		byte input[512];
-		length = Serial.readBytes(input, 512);
-		if (length != 0) configFile.write(input, length);
+		chunkLength = Serial.readBytes(input, 512);
+		receivedBytes += chunkLength;
+		if (chunkLength != 0) configFile.write(input, chunkLength);
 
-	} while (length == 512);
+	} while (chunkLength == 512);
+	if(chunkLength == fileSize) {
+		renameConfigFile(CONFIG_NAME);
+	}
 	configFile.sync();
 	configFile.close();
+
 }
 
 void postSetup() {

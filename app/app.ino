@@ -52,7 +52,6 @@ void loop() {
 			break;
 		case 2:
 		case 50:
-			renameConfigFile();
 			saveNewConfigFileFromSerial();
 			initAllDisplays();
 			delay(200);
