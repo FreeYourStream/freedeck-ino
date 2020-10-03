@@ -30,6 +30,18 @@
 // from display to display
 #define PRE_CHARGE_PERIOD 0x11
 
+// Minimum Brightness value for displays. If your displays image quality gets worse at lower
+// brighness choose a bigger value here
+#define MINIMUM_BRIGHTNESS 0x20
+// #define MINIMUM_BRIGHTNESS 0x00 //almost dark, good displays only
+// #define MINIMUM_BRIGHTNESS 0x30 //brightest for cheap displays
+
+// if your screen is flickering, choose a lower number. the worse the screen, the lower the number.
+#define REFRESH_FREQUENCY 0xf2
+// #define REFRESH_FREQUENCY 0xf1
+// #define REFRESH_FREQUENCY 0xc1
+// #define REFRESH_FREQUENCY 0x80
+
 // Pin or port numbers for SDA and SCL
 // NOT THE ARDUINO PORT NUMBERS
 #define BB_SDA 2  // ARDUINO:RX_PIN:D0 32U4:20:PD2
