@@ -24,11 +24,24 @@
 // startup right away
 #define BOOT_DELAY 0
 #define CONFIG_NAME "config.bin"
+#define TEMP_FILE "config.bin.tmp"
 #define MAX_CACHE 32
 
 // Change this value from 0x11 up to 0xff to reduce coil whine. different
 // from display to display
 #define PRE_CHARGE_PERIOD 0x11
+
+// Minimum Brightness value for displays. If your displays image quality gets worse at lower
+// brighness choose a bigger value here
+#define MINIMUM_BRIGHTNESS 0x20
+// #define MINIMUM_BRIGHTNESS 0x00 //almost dark, good displays only
+// #define MINIMUM_BRIGHTNESS 0x30 //brightest for cheap displays
+
+// if your screen is flickering, choose a lower number. the worse the screen, the lower the number.
+#define REFRESH_FREQUENCY 0xf2
+// #define REFRESH_FREQUENCY 0xf1
+// #define REFRESH_FREQUENCY 0xc1
+// #define REFRESH_FREQUENCY 0x80
 
 // Pin or port numbers for SDA and SCL
 // NOT THE ARDUINO PORT NUMBERS
