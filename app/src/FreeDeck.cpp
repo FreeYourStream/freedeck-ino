@@ -239,7 +239,7 @@ void loadConfigFile() {
 void initSdCard() {
 	int i = 0;
 	//, SD_SCK_MHZ(50)
-	while (!SD.begin(SD_CS_PIN, SD_SCK_MHZ(50)) && i <= 100) {
+	while (!SD.begin(SD_CS_PIN, SD_SCK_MHZ(16)) && i <= 100) {
 		i++;
 	}
 	if (i == 100) {
@@ -261,7 +261,7 @@ void dumpConfigFileOverSerial() {
 	}
 }
 
-void renameConfigFile(char const *path) {
+void _renameTempFileToConfigFile(char const *path) {
 	if (SD.exists(path)) {
 		SD.remove(path);
 	}
@@ -269,11 +269,10 @@ void renameConfigFile(char const *path) {
 }
 
 void _openTempFile() {
-	char const *tempFile = strcat(CONFIG_NAME, ".tmp");
-	if (SD.exists(tempFile)) {
-		SD.remove(tempFile);
+	if (SD.exists(TEMP_FILE)) {
+		SD.remove(TEMP_FILE);
 	}
-	configFile = SD.open(tempFile, O_WRONLY | O_CREAT);
+	configFile = SD.open(TEMP_FILE, O_WRONLY | O_CREAT);
 	configFile.seekSet(0);
 }
 
@@ -304,10 +303,9 @@ void saveNewConfigFileFromSerial() {
 		if (chunkLength != 0) configFile.write(input, chunkLength);
 
 	} while (chunkLength == 512);
-	if(chunkLength == fileSize) {
-		renameConfigFile(CONFIG_NAME);
+	if(receivedBytes == fileSize) {
+		_renameTempFileToConfigFile(CONFIG_NAME);
 	}
-	configFile.sync();
 	configFile.close();
 
 }

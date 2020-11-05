@@ -24,6 +24,7 @@
 // startup right away
 #define BOOT_DELAY 0
 #define CONFIG_NAME "config.bin"
+#define TEMP_FILE "config.bin.tmp"
 #define MAX_CACHE 32
 
 // Change this value from 0x11 up to 0xff to reduce coil whine. different

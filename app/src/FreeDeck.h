@@ -12,6 +12,6 @@ void setGlobalContrast();
 void loadConfigFile();
 void initSdCard();
 void dumpConfigFileOverSerial();
-void renameConfigFile();
+void _renameTempFileToConfigFile();
 void saveNewConfigFileFromSerial();
 void postSetup();
