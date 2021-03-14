@@ -6,12 +6,19 @@
                 "${workspaceFolder}/**",
                 "~/Arduino/libraries/**",
                 "~/.arduino15/packages/arduino/hardware/avr/1.8.3/libraries/**",
-                "~/.arduino15/packages/arduino/tools/**"
+                "~/.arduino15/packages/arduino/tools/**",
+                "/home/koriwi/.arduino15/packages/arduino/hardware/avr/1.8.3/**",
+                "/home/koriwi/.arduino15/packages/arduino/tools/**",
+                "/usr/bin/libraries/**",
+                "/home/koriwi/Arduino/libraries/**"
             ],
             "forcedInclude": [
-                "~/.arduino15/packages/arduino/hardware/avr/1.8.3/cores/arduino/Arduino.h"
+                "~/.arduino15/packages/arduino/hardware/avr/1.8.3/cores/arduino/Arduino.h",
+                "/home/koriwi/.arduino15/packages/arduino/hardware/avr/1.8.3/cores/arduino/Arduino.h"
             ],
-            "defines": [],
+            "defines": [
+                "USBCON"
+            ],
             "compilerPath": "/usr/bin/clang",
             "cStandard": "c11",
             "cppStandard": "c++14",

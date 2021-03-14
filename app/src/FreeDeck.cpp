@@ -1,14 +1,14 @@
+#include "./FreeDeck.h"
+
+#include <HID-Project.h>
 #include <SPI.h>
 #include <SdFat.h>
 #include <avr/power.h>
-#include <HID-Project.h>
 
 #include "../settings.h"
-#include "./FreeDeck.h"
 #include "./OledTurboLight.h"
 
 #define BUTTON_DOWN 0
-
 
 SdFat SD;
 File configFile;
@@ -48,7 +48,6 @@ void setMuxAddress(int address) {
 	delay(1);  // wait for multiplexer to switch
 }
 
-
 void setGlobalContrast(unsigned short c) {
 	if (c == 0) c = 1;
 	contrast = c;
@@ -59,22 +58,22 @@ void setGlobalContrast(unsigned short c) {
 	}
 }
 
-void setSetting () {
+void setSetting() {
 	uint8_t settingCommand;
 	configFile.read(&settingCommand, 1);
-	if(settingCommand == 1) { // decrease brightness
+	if (settingCommand == 1) {	// decrease brightness
 		contrast = max(contrast - 20, 1);
 		setGlobalContrast(contrast);
-	} else if(settingCommand == 2) { // increase brightness
+	} else if (settingCommand == 2) {  // increase brightness
 		contrast = min(contrast + 20, 255);
 		setGlobalContrast(contrast);
-	} else if(settingCommand == 3) { // set brightness
+	} else if (settingCommand == 3) {  // set brightness
 		contrast = min(contrast + 20, 255);
 		setGlobalContrast(configFile.read());
 	}
 }
 
-void pressKeys () {
+void pressKeys() {
 	byte i = 0;
 	uint8_t key;
 	configFile.read(&key, 1);
@@ -85,7 +84,7 @@ void pressKeys () {
 	}
 }
 
-void sendText () {
+void sendText() {
 	byte i = 0;
 	uint8_t key;
 	configFile.read(&key, 1);
@@ -100,13 +99,13 @@ void sendText () {
 	Keyboard.releaseAll();
 }
 
-void changePage () {
+void changePage() {
 	int16_t pageIndex;
 	configFile.read(&pageIndex, 2);
 	loadPage(pageIndex);
 }
 
-void pressSpecialKey () {
+void pressSpecialKey() {
 	uint16_t key;
 	configFile.read(&key, 2);
 	Consumer.press(key);
@@ -228,7 +227,6 @@ void initAllDisplays() {
 	}
 }
 
-
 void loadConfigFile() {
 	configFile = SD.open(CONFIG_NAME, FILE_READ);
 	configFile.seek(2);
@@ -303,11 +301,10 @@ void saveNewConfigFileFromSerial() {
 		if (chunkLength != 0) configFile.write(input, chunkLength);
 
 	} while (chunkLength == 512);
-	if(receivedBytes == fileSize) {
+	if (receivedBytes == fileSize) {
 		_renameTempFileToConfigFile(CONFIG_NAME);
 	}
 	configFile.close();
-
 }
 
 void postSetup() {

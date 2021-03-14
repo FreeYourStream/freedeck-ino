@@ -18,6 +18,7 @@
 // button display count
 // increase if your freedeck has more displays
 #include <HID-Project.h>
+
 #include "./settings.h"
 #include "./src/FreeDeck.h"
 
@@ -57,6 +58,15 @@ void loop() {
 			delay(200);
 			postSetup();
 			delay(200);
+			break;
+		case 3:
+		case 51:
+			int16_t targetPage = Serial.read();
+			while (targetPage == 13 || targetPage == 10 || targetPage < 0) {
+				targetPage = Serial.read();
+				delay(10);
+			}
+			loadPage(targetPage - 48);
 			break;
 	}
 	for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
