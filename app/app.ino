@@ -48,18 +48,8 @@ void setup() {
 
 void handleSerial() {
 	if (Serial.available() > 0) {
-		long read = readSerialData();
-		// if (read == 1 || read == 49) {
-		// 	dumpConfigFileOverSerial();
-		// }
-		// if (read == 2 || read == 50) {
-		// 	saveNewConfigFileFromSerial();
-		// 	initAllDisplays();
-		// 	delay(200);
-		// 	postSetup();
-		// 	delay(200);
-		// }
-		if (read == 17) {
+		unsigned long read = readSerialBinary();
+		if (read == 0x3) {
 			handleAPI();
 			Serial.println("");
 		}
