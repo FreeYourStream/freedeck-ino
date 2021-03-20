@@ -21,9 +21,11 @@
 
 #include "./settings.h"
 #include "./src/FreeDeck.h"
+#include "./src/FreeDeckSerialAPI.h"
 
 void setup() {
 	Serial.begin(4000000);
+	Serial.setTimeout(100);
 	delay(BOOT_DELAY);
 	Keyboard.begin();
 	Consumer.begin();
@@ -44,31 +46,31 @@ void setup() {
 	postSetup();
 }
 
-void loop() {
-	int read = Serial.read();
-	switch (read) {
-		case 1:
-		case 49:
-			dumpConfigFileOverSerial();
-			break;
-		case 2:
-		case 50:
-			saveNewConfigFileFromSerial();
-			initAllDisplays();
-			delay(200);
-			postSetup();
-			delay(200);
-			break;
-		case 3:
-		case 51:
-			int16_t targetPage = Serial.read();
-			while (targetPage == 13 || targetPage == 10 || targetPage < 0) {
-				targetPage = Serial.read();
-				delay(10);
-			}
-			loadPage(targetPage - 48);
-			break;
+void handleSerial() {
+	if (Serial.available() > 0) {
+		long read = readSerialData();
+		// if (read == 1 || read == 49) {
+		// 	dumpConfigFileOverSerial();
+		// }
+		// if (read == 2 || read == 50) {
+		// 	saveNewConfigFileFromSerial();
+		// 	initAllDisplays();
+		// 	delay(200);
+		// 	postSetup();
+		// 	delay(200);
+		// }
+		if (read == 17) {
+			handleAPI();
+			Serial.println("");
+		}
+		while (Serial.available()) {
+			Serial.read();
+		}
 	}
+}
+
+void loop() {
+	handleSerial();
 	for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
 		checkButtonState(buttonIndex);
 	}
