@@ -1,6 +1,6 @@
 #include <Arduino.h>
 extern int currentPage;
-
+extern int pageCount;
 int getCurrentPage();
 int getBitValue(int number, int place);
 void setMuxAddress(int address);

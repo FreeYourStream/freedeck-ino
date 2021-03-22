@@ -14,6 +14,7 @@ SdFat SD;
 File configFile;
 
 int currentPage = 0;
+int pageCount;
 unsigned short int fileImageDataOffset = 0;
 short int contrast = 0;
 unsigned char imageCache[IMG_CACHE_SIZE];
@@ -231,6 +232,7 @@ void loadConfigFile() {
 	configFile = SD.open(CONFIG_NAME, FILE_READ);
 	configFile.seek(2);
 	configFile.read(&fileImageDataOffset, 2);
+	pageCount = (fileImageDataOffset - 1) / BD_COUNT;
 	fileImageDataOffset = fileImageDataOffset * 16;
 }
 

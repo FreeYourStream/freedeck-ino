@@ -51,7 +51,6 @@ void handleSerial() {
 		unsigned long read = readSerialBinary();
 		if (read == 0x3) {
 			handleAPI();
-			Serial.println("");
 		}
 		while (Serial.available()) {
 			Serial.read();

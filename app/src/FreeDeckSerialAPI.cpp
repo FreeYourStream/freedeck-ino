@@ -6,8 +6,13 @@
 unsigned long int readSerialAscii() {
 	char numberChars[10];
 	FILL_BUFFER();
-	Serial.readBytesUntil('\n', numberChars, 9);
-	return atol(numberChars);
+	size_t len;
+	len = Serial.readBytesUntil('\n', numberChars, 9);
+	// remove any trailing extra stuff that atol does not like
+	char clean[len + 1];
+	memcpy(clean, &numberChars[0], len + 1 * sizeof(char));
+	clean[len] = '\0';
+	return atol(clean);
 }
 
 unsigned long int readSerialBinary() {
@@ -38,9 +43,18 @@ void handleAPI() {
 		delay(200);
 	}
 	if (command == 0x30) {	// get current page
-		Serial.print(currentPage);
+		Serial.println(currentPage);
 	}
 	if (command == 0x31) {	// set current page
-		loadPage(readSerialAscii());
+		unsigned long targetPage = readSerialAscii();
+		if (targetPage <= pageCount) {
+			loadPage(targetPage);
+			Serial.println(OK);
+		} else {
+			Serial.println(ERROR);
+		}
+	}
+	if (command == 0x32) {	// get page count
+		Serial.println(pageCount);
 	}
 }
