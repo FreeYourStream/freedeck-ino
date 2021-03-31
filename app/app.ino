@@ -21,11 +21,21 @@
 #include "./settings.h"
 #include "./src/FreeDeck.h"
 
+/**
+ * @brief Setup function, initializes everything.  
+ * @returns none
+ */
 void setup() {
+	// Setting up the Serial Communication
 	Serial.begin(4000000);
+	// Give the oleds some times to start up
 	delay(BOOT_DELAY);
+	// Init and start the keyboard
 	Keyboard.begin();
+	// Init and start the Media buttons
 	Consumer.begin();
+
+	// Set the pinmodes for the multiplexers
 	pinMode(6, INPUT_PULLUP);
 	pinMode(S0_PIN, OUTPUT);
 #if BD_COUNT > 2
@@ -37,28 +47,43 @@ void setup() {
 #if BD_COUNT > 8
 	pinMode(S3_PIN, OUTPUT);
 #endif
+
+	// Init all the displays
 	initAllDisplays();
+	// Give it some time to process it all
 	delay(100);
+	// Init the SD card
 	initSdCard();
+	// Do some post setup things
 	postSetup();
 }
 
 void loop() {
+	// Read the incoming serial data
 	int read = Serial.read();
+	// Check what to do with this packet
 	switch (read) {
+		// If its a 1 (or 0x1)
 		case 1:
 		case 49:
+			// Dump the content of the config file over the serial monitor
 			dumpConfigFileOverSerial();
 			break;
+		// If its a 2 (or 0x2)
 		case 2:
 		case 50:
+			// Recieve the new config file
 			saveNewConfigFileFromSerial();
+			// Reinit all the displays
 			initAllDisplays();
 			delay(200);
+			// Do the post setup
 			postSetup();
 			delay(200);
 			break;
 	}
+	
+	// Check all the buttons if they have been pressed
 	for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
 		checkButtonState(buttonIndex);
 	}
