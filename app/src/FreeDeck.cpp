@@ -9,6 +9,8 @@
 #include "./OledTurboLight.h"
 
 #define BUTTON_DOWN 0
+#define TYPE_DISPLAY 0
+#define TYPE_BUTTON 1
 
 SdFat SD;
 File configFile;
@@ -35,9 +37,12 @@ int getBitValue(int number, int place) {
 	return (number & (1 << place)) >> place;
 }
 
-void setMuxAddress(int address) {
+void setMuxAddress(int address, uint8_t type = TYPE_DISPLAY) {
 #ifdef CUSTOM_ORDER
-	address = screenToAddress[address];
+	if (type == TYPE_DISPLAY)
+		address = screenToAddress[address];
+	else if (type == TYPE_BUTTON)
+		address = buttonToAddress[address];
 #endif
 	int S0 = getBitValue(address, 0);
 	digitalWrite(S0_PIN, S0);
@@ -64,7 +69,7 @@ void setGlobalContrast(unsigned short c) {
 	if (c == 0) c = 1;
 	contrast = c;
 	for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
-		setMuxAddress(buttonIndex);
+		setMuxAddress(buttonIndex, TYPE_DISPLAY);
 		delay(1);
 		oledSetContrast(c);
 	}
@@ -136,7 +141,7 @@ void displayImage(int16_t imageNumber) {
 void loadPage(int16_t pageIndex) {
 	currentPage = pageIndex;
 	for (uint8_t j = 0; j < BD_COUNT; j++) {
-		setMuxAddress(j);
+		setMuxAddress(j, TYPE_DISPLAY);
 		delay(1);
 		displayImage(pageIndex * BD_COUNT + j);
 	}
@@ -211,7 +216,7 @@ void executeButtonConfig(uint8_t buttonIndex, uint8_t buttonUp,
 	}
 }
 void checkButtonState(uint8_t buttonIndex) {
-	setMuxAddress(buttonIndex);
+	setMuxAddress(buttonIndex, TYPE_BUTTON);
 	uint8_t state = digitalRead(BUTTON_PIN);
 	uint32_t ms = millis();
 	uint32_t duration = ms - downTime[buttonIndex];
@@ -232,7 +237,7 @@ void initAllDisplays() {
 		buttonIsUp[buttonIndex] = 1;
 		downTime[buttonIndex] = 0;
 		longPressed[buttonIndex] = 0;
-		setMuxAddress(buttonIndex);
+		setMuxAddress(buttonIndex, TYPE_DISPLAY);
 		delay(1);
 		oledInit(0x3c, 0, 0);
 		oledFill(255);
