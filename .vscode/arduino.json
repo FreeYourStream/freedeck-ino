@@ -1,5 +1,0 @@
-{
-    "port": "/dev/ttyACM4",
-    "board": "arduino:avr:micro",
-    "sketch": "../freedeck-ino/app/app.ino"
-}
