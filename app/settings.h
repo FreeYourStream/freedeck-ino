@@ -2,7 +2,7 @@
 
 // for ryan aukes 5x3 pcb layout or
 // if your screens are not in 1..n order
-#define CUSTOM_ORDER
+// #define CUSTOM_ORDER
 #ifdef CUSTOM_ORDER
 #define ADDRESS_TO_SCREEN \
 	{ 2, 1, 3, 4, 5, 6 }
