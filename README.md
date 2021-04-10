@@ -13,7 +13,7 @@ The electrical drawings will soon be published in another repo.
 
 ### Let's you speak to the FreeDeck to automate things
 
-All commands and parameters have to be followed by a newline (`\n`/`\0xa`/`\10`). Carriage returns are ignored (`\r`/`\0xd`/`\10`)
+All commands and parameters have to be followed by a newline (`\n`/`\0xa`/`\10`). Carriage returns are ignored (`\r`/`\0xd`/`\13`)
 
 E.g. changing the displayed page to page 5 (linux):
 
