@@ -5,11 +5,9 @@
 // #define CUSTOM_ORDER
 #ifdef CUSTOM_ORDER
 #define ADDRESS_TO_SCREEN \
-	{ 2, 1, 3, 4, 5, 6 }
-//{ 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 5, 10 }
+	{ 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 5, 10 }
 #define ADDRESS_TO_BUTTON \
-	{ 2, 1, 3, 4, 5, 6 }
-//{ 11, 6, 1, 12, 7, 2, 3, 8, 13, 14, 15, 10, 5, 9, 4 }
+	{ 11, 6, 1, 12, 7, 2, 3, 8, 13, 14, 15, 10, 5, 9, 4 }
 #endif
 
 // ChipSelect pin for SD card spi
