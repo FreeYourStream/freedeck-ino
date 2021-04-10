@@ -23,11 +23,22 @@ uint32_t downTime[BD_COUNT] = {0};
 uint8_t longPressed[BD_COUNT] = {0};
 uint8_t pageChanged = 0;
 
+#ifdef CUSTOM_ORDER
+byte addressToScreen[] = ADDRESS_TO_SCREEN;
+byte addressToButton[] = ADDRESS_TO_BUTTON;
+
+byte screenToAddress[BD_COUNT];
+byte buttonToAddress[BD_COUNT];
+#endif
+
 int getBitValue(int number, int place) {
 	return (number & (1 << place)) >> place;
 }
 
 void setMuxAddress(int address) {
+#ifdef CUSTOM_ORDER
+	address = screenToAddress[address];
+#endif
 	int S0 = getBitValue(address, 0);
 	digitalWrite(S0_PIN, S0);
 
@@ -201,7 +212,7 @@ void executeButtonConfig(uint8_t buttonIndex, uint8_t buttonUp,
 }
 void checkButtonState(uint8_t buttonIndex) {
 	setMuxAddress(buttonIndex);
-	uint8_t state = digitalRead(6);
+	uint8_t state = digitalRead(BUTTON_PIN);
 	uint32_t ms = millis();
 	uint32_t duration = ms - downTime[buttonIndex];
 	if (duration == ms) duration = 0;
@@ -310,6 +321,12 @@ void saveNewConfigFileFromSerial() {
 }
 
 void postSetup() {
+#ifdef CUSTOM_ORDER
+	for (uint8_t i = 0; i < BD_COUNT; i++) {
+		screenToAddress[addressToScreen[i] - 1] = i;
+		buttonToAddress[addressToButton[i] - 1] = i;
+	}
+#endif
 	loadConfigFile();
 	configFile.seekSet(4);
 	setGlobalContrast(configFile.read());
