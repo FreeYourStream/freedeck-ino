@@ -1,13 +1,15 @@
 #include "./FreeDeckSerialAPI.h"
 
+#include <limits.h>
+
 #include "./FreeDeck.h"
 #include "./OledTurboLight.h"
 
 unsigned long int readSerialAscii() {
 	char numberChars[10];
 	FILL_BUFFER();
-	size_t len;
-	len = Serial.readBytesUntil('\n', numberChars, 9);
+	size_t len = Serial.readBytesUntil('\n', numberChars, 9);
+	if (len == 0) return ULONG_MAX;
 	// remove any trailing extra stuff that atol does not like
 	char clean[len + 1];
 	memcpy(clean, &numberChars[0], len + 1 * sizeof(char));
@@ -18,9 +20,10 @@ unsigned long int readSerialAscii() {
 unsigned long int readSerialBinary() {
 	byte numbers[4];
 	FILL_BUFFER();
-	size_t length = Serial.readBytesUntil('\n', numbers, 4);
+	size_t len = Serial.readBytesUntil('\n', numbers, 4);
+	if (len == 0) return ULONG_MAX;
 	unsigned long int number = 0;
-	for (byte i = 0; i < length; i++) {
+	for (byte i = 0; i < len; i++) {
 		if (numbers[i] == 13) break;
 		number |= numbers[i] << (i * 8);
 	}
@@ -30,7 +33,7 @@ unsigned long int readSerialBinary() {
 void handleAPI() {
 	unsigned long command = readSerialBinary();
 	if (command == 0x10) {	// get firmware version
-		Serial.print(F("2.0.0"));
+		Serial.println(F("2.0.0"));
 	}
 	if (command == 0x20) {	// read config
 		dumpConfigFileOverSerial();
@@ -47,6 +50,7 @@ void handleAPI() {
 	}
 	if (command == 0x31) {	// set current page
 		unsigned long targetPage = readSerialAscii();
+		if (targetPage == ULONG_MAX) return;
 		if (targetPage <= pageCount) {
 			loadPage(targetPage);
 			Serial.println(OK);
