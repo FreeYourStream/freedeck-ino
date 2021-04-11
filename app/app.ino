@@ -29,7 +29,7 @@ void setup() {
 	delay(BOOT_DELAY);
 	Keyboard.begin();
 	Consumer.begin();
-	pinMode(6, INPUT_PULLUP);
+	pinMode(BUTTON_PIN, INPUT_PULLUP);
 	pinMode(S0_PIN, OUTPUT);
 #if BD_COUNT > 2
 	pinMode(S1_PIN, OUTPUT);
