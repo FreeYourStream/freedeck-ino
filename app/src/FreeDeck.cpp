@@ -28,9 +28,6 @@ uint8_t pageChanged = 0;
 #ifdef CUSTOM_ORDER
 byte addressToScreen[] = ADDRESS_TO_SCREEN;
 byte addressToButton[] = ADDRESS_TO_BUTTON;
-
-byte screenToAddress[BD_COUNT];
-byte buttonToAddress[BD_COUNT];
 #endif
 
 int getBitValue(int number, int place) {
@@ -40,9 +37,9 @@ int getBitValue(int number, int place) {
 void setMuxAddress(int address, uint8_t type = TYPE_DISPLAY) {
 #ifdef CUSTOM_ORDER
 	if (type == TYPE_DISPLAY)
-		address = screenToAddress[address];
+		address = addressToScreen[address];
 	else if (type == TYPE_BUTTON)
-		address = buttonToAddress[address];
+		address = addressToButton[address];
 #endif
 	int S0 = getBitValue(address, 0);
 	digitalWrite(S0_PIN, S0);
@@ -326,12 +323,6 @@ void saveNewConfigFileFromSerial() {
 }
 
 void postSetup() {
-#ifdef CUSTOM_ORDER
-	for (uint8_t i = 0; i < BD_COUNT; i++) {
-		screenToAddress[addressToScreen[i] - 1] = i;
-		buttonToAddress[addressToButton[i] - 1] = i;
-	}
-#endif
 	loadConfigFile();
 	configFile.seekSet(4);
 	setGlobalContrast(configFile.read());
