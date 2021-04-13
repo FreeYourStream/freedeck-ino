@@ -17,3 +17,6 @@ void dumpConfigFileOverSerial();
 void _renameTempFileToConfigFile();
 void saveNewConfigFileFromSerial();
 void postSetup();
+void checkTimeOut();
+void switchOffScreens();
+void switchOnScreens();
