@@ -63,4 +63,5 @@ void loop() {
 	for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
 		checkButtonState(buttonIndex);
 	}
+	if(TIMEOUT_TIME > 0) checkTimeOut();
 }

@@ -10,6 +10,8 @@
 	{ 11, 6, 1, 12, 7, 2, 3, 8, 13, 14, 15, 10, 5, 9, 4 }
 #endif
 
+#define TIMEOUT_TIME 5UL * 60UL * 1000UL // Screens turn off after 5 minutes;
+
 // ChipSelect pin for SD card spi
 #define SD_CS_PIN 10
 

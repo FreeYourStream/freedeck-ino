@@ -30,6 +30,9 @@ byte addressToScreen[] = ADDRESS_TO_SCREEN;
 byte addressToButton[] = ADDRESS_TO_BUTTON;
 #endif
 
+unsigned long timeOutStartTime ;
+bool timeOut = false;
+
 int getBitValue(int number, int place) {
 	return (number & (1 << place)) >> place;
 }
@@ -221,10 +224,14 @@ void checkButtonState(uint8_t buttonIndex) {
 	if (state != buttonIsUp[buttonIndex] ||
 		(duration >= LONG_PRESS_DURATION && longPressed[buttonIndex] == 0 &&
 		 buttonIsUp[buttonIndex] == BUTTON_DOWN)) {
-		if (duration >= LONG_PRESS_DURATION) {
-			longPressed[buttonIndex] = 1;
+		if(timeOut == true) {
+			switchScreensOn(); 
+		} else {
+			if (duration >= LONG_PRESS_DURATION) {
+				longPressed[buttonIndex] = 1;
+			}
+			executeButtonConfig(buttonIndex, state, 0);
 		}
-		executeButtonConfig(buttonIndex, state, 0);
 	}
 	buttonIsUp[buttonIndex] = state;
 }
@@ -327,4 +334,26 @@ void postSetup() {
 	configFile.seekSet(4);
 	setGlobalContrast(configFile.read());
 	loadPage(0);
+}
+
+void checkTimeOut() {
+  unsigned long currentTime = millis();
+  if (currentTime - timeOutStartTime  >= TIMEOUT_TIME) {
+    if(timeOut == false) switchScreensOff();
+  }
+}
+
+void switchScreensOff() {
+  timeOut = true;
+  for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
+    setMuxAddress(buttonIndex, TYPE_DISPLAY);
+    delay(1);
+    oledFill(0);
+  }
+}
+
+void switchScreensOn() {
+  timeOut = false;
+  timeOutStartTime  = millis();
+  loadPage(currentPage);
 }
