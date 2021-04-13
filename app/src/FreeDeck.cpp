@@ -30,7 +30,7 @@ byte addressToScreen[] = ADDRESS_TO_SCREEN;
 byte addressToButton[] = ADDRESS_TO_BUTTON;
 #endif
 
-unsigned long timeOutStartTime ;
+unsigned long timeOutStartTime;
 bool timeOut = false;
 
 int getBitValue(int number, int place) {
@@ -150,6 +150,7 @@ void loadPage(int16_t pageIndex) {
 void executeButtonConfig(uint8_t buttonIndex, uint8_t buttonUp,
 						 uint8_t secondary) {
 	if (configFile) {
+		timeOutStartTime = millis();
 		// + 1 because of the 1 header row with 16 bytes
 		configFile.seek((BD_COUNT * currentPage + buttonIndex + 1) * 16 +
 						8 * secondary);
@@ -224,8 +225,8 @@ void checkButtonState(uint8_t buttonIndex) {
 	if (state != buttonIsUp[buttonIndex] ||
 		(duration >= LONG_PRESS_DURATION && longPressed[buttonIndex] == 0 &&
 		 buttonIsUp[buttonIndex] == BUTTON_DOWN)) {
-		if(timeOut == true) {
-			switchScreensOn(); 
+		if (timeOut == true) {
+			switchScreensOn();
 		} else {
 			if (duration >= LONG_PRESS_DURATION) {
 				longPressed[buttonIndex] = 1;
@@ -337,23 +338,23 @@ void postSetup() {
 }
 
 void checkTimeOut() {
-  unsigned long currentTime = millis();
-  if (currentTime - timeOutStartTime  >= TIMEOUT_TIME) {
-    if(timeOut == false) switchScreensOff();
-  }
+	unsigned long currentTime = millis();
+	if (currentTime - timeOutStartTime >= TIMEOUT_TIME) {
+		if (timeOut == false) switchScreensOff();
+	}
 }
 
 void switchScreensOff() {
-  timeOut = true;
-  for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
-    setMuxAddress(buttonIndex, TYPE_DISPLAY);
-    delay(1);
-    oledFill(0);
-  }
+	timeOut = true;
+	for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
+		setMuxAddress(buttonIndex, TYPE_DISPLAY);
+		delay(1);
+		oledFill(0);
+	}
 }
 
 void switchScreensOn() {
-  timeOut = false;
-  timeOutStartTime  = millis();
-  loadPage(currentPage);
+	timeOut = false;
+	timeOutStartTime = millis();
+	loadPage(currentPage);
 }
