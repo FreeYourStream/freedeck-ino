@@ -338,8 +338,7 @@ void postSetup() {
 
 void checkTimeOut() {
   unsigned long currentTime = millis();
-  if (currentTime - timeOutStartTime  >= TIMEOUT_TIME)
-  {
+  if (currentTime - timeOutStartTime  >= TIMEOUT_TIME) {
     if(timeOut == false) switchScreensOff();
   }
 }
@@ -354,8 +353,7 @@ void switchScreensOff() {
 }
 
 void switchScreensOn() {
-  unsigned long currentTime = millis();
   timeOut = false;
-  timeOutStartTime  = currentTime;
+  timeOutStartTime  = millis();
   loadPage(currentPage);
 }
