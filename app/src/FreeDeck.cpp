@@ -30,8 +30,7 @@ byte addressToScreen[] = ADDRESS_TO_SCREEN;
 byte addressToButton[] = ADDRESS_TO_BUTTON;
 #endif
 
-unsigned long startTime;
-unsigned long currentTime;
+unsigned long timeOutStartTime ;
 bool timeOut = false;
 
 int getBitValue(int number, int place) {
@@ -226,7 +225,7 @@ void checkButtonState(uint8_t buttonIndex) {
 		(duration >= LONG_PRESS_DURATION && longPressed[buttonIndex] == 0 &&
 		 buttonIsUp[buttonIndex] == BUTTON_DOWN)) {
 		if(timeOut == true) {
-			switchOnScreens(); 
+			switchScreensOn(); 
 		} else {
 			if (duration >= LONG_PRESS_DURATION) {
 				longPressed[buttonIndex] = 1;
@@ -338,14 +337,14 @@ void postSetup() {
 }
 
 void checkTimeOut() {
-  currentTime = millis();
-  if (currentTime - startTime >= TIMEOUTTIME)
+  unsigned long currentTime = millis();
+  if (currentTime - timeOutStartTime  >= TIMEOUT_TIME)
   {
-    if(timeOut == false) switchOffScreens();
+    if(timeOut == false) switchScreensOff();
   }
 }
 
-void switchOffScreens() {
+void switchScreensOff() {
   timeOut = true;
   for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
     setMuxAddress(buttonIndex, TYPE_DISPLAY);
@@ -354,9 +353,9 @@ void switchOffScreens() {
   }
 }
 
-void switchOnScreens() {
+void switchScreensOn() {
+  unsigned long currentTime = millis();
   timeOut = false;
-  currentTime = millis();
-  startTime = currentTime;
+  timeOutStartTime  = currentTime;
   loadPage(currentPage);
 }
