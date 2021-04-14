@@ -273,12 +273,12 @@ void dumpConfigFileOverSerial() {
 	configFile.seekSet(0);
 	if (configFile.available()) {
 		Serial.println(configFile.fileSize());
-		byte buff[512];
-		int available;
+		byte buff[SERIAL_TX_BUFFER_SIZE] = {0};
+		int read;
 		do {
-			available = configFile.read(buff, 512);
-			Serial.write(buff, 512);
-		} while (available >= 512);
+			read = configFile.read(buff, SERIAL_TX_BUFFER_SIZE);
+			Serial.write(buff, read);
+		} while (read >= SERIAL_TX_BUFFER_SIZE);
 	}
 }
 
@@ -300,11 +300,8 @@ void _openTempFile() {
 long _getSerialFileSize() {
 	char numberChars[10];
 	FILL_BUFFER();
-	byte fileSizeLoopCounter = 0;
-	while (fileSizeLoopCounter < 9) {
-		numberChars[fileSizeLoopCounter++] = Serial.read();
-	};
-	numberChars[9] = '\n';
+	size_t len = Serial.readBytesUntil('\n', numberChars, 10);
+	numberChars[len] = '\n';
 	return atol(numberChars);
 }
 
@@ -317,13 +314,15 @@ void saveNewConfigFileFromSerial() {
 	FILL_BUFFER();
 	do {
 		FILL_BUFFER();
-		byte input[512];
-		chunkLength = Serial.readBytes(input, 512);
+		byte input[SERIAL_RX_BUFFER_SIZE];
+		chunkLength = Serial.readBytes(input, SERIAL_RX_BUFFER_SIZE);
+		if (chunkLength == 0) break;
 		receivedBytes += chunkLength;
-		Serial.println(receivedBytes);
-		if (chunkLength != 0) configFile.write(input, chunkLength);
+		if (!(receivedBytes & 512)) Serial.println(receivedBytes);
+		configFile.write(input, chunkLength);
 
-	} while (chunkLength == 512);
+	} while (chunkLength == SERIAL_RX_BUFFER_SIZE && receivedBytes < fileSize);
+	Serial.print(receivedBytes);
 	if (receivedBytes == fileSize) {
 		_renameTempFileToConfigFile(CONFIG_NAME);
 	}

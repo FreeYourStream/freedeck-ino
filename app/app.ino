@@ -15,14 +15,11 @@
 // License along with this program. If not, see
 // <https://www.gnu.org/licenses/>.
 
-// button display count
-// increase if your freedeck has more displays
 #include <HID-Project.h>
 
 #include "./settings.h"
 #include "./src/FreeDeck.h"
 #include "./src/FreeDeckSerialAPI.h"
-
 void setup() {
 	Serial.begin(4000000);
 	Serial.setTimeout(100);
@@ -63,5 +60,5 @@ void loop() {
 	for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
 		checkButtonState(buttonIndex);
 	}
-	if(TIMEOUT_TIME > 0) checkTimeOut();
+	if (TIMEOUT_TIME > 0) checkTimeOut();
 }
