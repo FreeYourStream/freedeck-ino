@@ -313,16 +313,14 @@ void saveNewConfigFileFromSerial() {
 	unsigned int chunkLength;
 	FILL_BUFFER();
 	do {
-		FILL_BUFFER();
 		byte input[SERIAL_RX_BUFFER_SIZE];
 		chunkLength = Serial.readBytes(input, SERIAL_RX_BUFFER_SIZE);
 		if (chunkLength == 0) break;
 		receivedBytes += chunkLength;
-		if (!(receivedBytes & 512)) Serial.println(receivedBytes);
+		if (!(receivedBytes % 4096) || receivedBytes == fileSize)
+			Serial.println(receivedBytes);
 		configFile.write(input, chunkLength);
-
 	} while (chunkLength == SERIAL_RX_BUFFER_SIZE && receivedBytes < fileSize);
-	Serial.print(receivedBytes);
 	if (receivedBytes == fileSize) {
 		_renameTempFileToConfigFile(CONFIG_NAME);
 	}
