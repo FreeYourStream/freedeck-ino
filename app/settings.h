@@ -5,9 +5,9 @@
 // #define CUSTOM_ORDER
 #ifdef CUSTOM_ORDER
 #define ADDRESS_TO_SCREEN \
-	{ 11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 5, 10 }
+	{ 13, 11, 8, 5, 2, 14, 10, 7, 4, 1, 12, 9, 6, 3, 0 }
 #define ADDRESS_TO_BUTTON \
-	{ 11, 6, 1, 12, 7, 2, 3, 8, 13, 14, 15, 10, 5, 9, 4 }
+	{ 12, 14, 6, 5, 2, 11, 13, 7, 4, 1, 10, 9, 8, 3, 0 }
 #endif
 
 #define TIMEOUT_TIME 0L	 // Screens turns never off
