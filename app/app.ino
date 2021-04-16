@@ -15,18 +15,18 @@
 // License along with this program. If not, see
 // <https://www.gnu.org/licenses/>.
 
-// button display count
-// increase if your freedeck has more displays
 #include <HID-Project.h>
+
 #include "./settings.h"
 #include "./src/FreeDeck.h"
-
+#include "./src/FreeDeckSerialAPI.h"
 void setup() {
 	Serial.begin(4000000);
+	Serial.setTimeout(100);
 	delay(BOOT_DELAY);
 	Keyboard.begin();
 	Consumer.begin();
-	pinMode(6, INPUT_PULLUP);
+	pinMode(BUTTON_PIN, INPUT_PULLUP);
 	pinMode(S0_PIN, OUTPUT);
 #if BD_COUNT > 2
 	pinMode(S1_PIN, OUTPUT);
@@ -43,23 +43,22 @@ void setup() {
 	postSetup();
 }
 
-void loop() {
-	int read = Serial.read();
-	switch (read) {
-		case 1:
-		case 49:
-			dumpConfigFileOverSerial();
-			break;
-		case 2:
-		case 50:
-			saveNewConfigFileFromSerial();
-			initAllDisplays();
-			delay(200);
-			postSetup();
-			delay(200);
-			break;
+void handleSerial() {
+	if (Serial.available() > 0) {
+		unsigned long read = readSerialBinary();
+		if (read == 0x3) {
+			handleAPI();
+		}
+		while (Serial.available()) {
+			Serial.read();
+		}
 	}
+}
+
+void loop() {
+	handleSerial();
 	for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
 		checkButtonState(buttonIndex);
 	}
+	if (TIMEOUT_TIME > 0) checkTimeOut();
 }

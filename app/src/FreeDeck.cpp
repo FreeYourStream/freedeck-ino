@@ -1,19 +1,22 @@
+#include "./FreeDeck.h"
+
+#include <HID-Project.h>
 #include <SPI.h>
 #include <SdFat.h>
 #include <avr/power.h>
-#include <HID-Project.h>
 
 #include "../settings.h"
-#include "./FreeDeck.h"
 #include "./OledTurboLight.h"
 
 #define BUTTON_DOWN 0
-
+#define TYPE_DISPLAY 0
+#define TYPE_BUTTON 1
 
 SdFat SD;
 File configFile;
 
 int currentPage = 0;
+int pageCount;
 unsigned short int fileImageDataOffset = 0;
 short int contrast = 0;
 unsigned char imageCache[IMG_CACHE_SIZE];
@@ -22,11 +25,25 @@ uint32_t downTime[BD_COUNT] = {0};
 uint8_t longPressed[BD_COUNT] = {0};
 uint8_t pageChanged = 0;
 
+#ifdef CUSTOM_ORDER
+byte addressToScreen[] = ADDRESS_TO_SCREEN;
+byte addressToButton[] = ADDRESS_TO_BUTTON;
+#endif
+
+unsigned long timeOutStartTime;
+bool timeOut = false;
+
 int getBitValue(int number, int place) {
 	return (number & (1 << place)) >> place;
 }
 
-void setMuxAddress(int address) {
+void setMuxAddress(int address, uint8_t type = TYPE_DISPLAY) {
+#ifdef CUSTOM_ORDER
+	if (type == TYPE_DISPLAY)
+		address = addressToScreen[address];
+	else if (type == TYPE_BUTTON)
+		address = addressToButton[address];
+#endif
 	int S0 = getBitValue(address, 0);
 	digitalWrite(S0_PIN, S0);
 
@@ -48,33 +65,32 @@ void setMuxAddress(int address) {
 	delay(1);  // wait for multiplexer to switch
 }
 
-
 void setGlobalContrast(unsigned short c) {
 	if (c == 0) c = 1;
 	contrast = c;
 	for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
-		setMuxAddress(buttonIndex);
+		setMuxAddress(buttonIndex, TYPE_DISPLAY);
 		delay(1);
 		oledSetContrast(c);
 	}
 }
 
-void setSetting () {
+void setSetting() {
 	uint8_t settingCommand;
 	configFile.read(&settingCommand, 1);
-	if(settingCommand == 1) { // decrease brightness
+	if (settingCommand == 1) {	// decrease brightness
 		contrast = max(contrast - 20, 1);
 		setGlobalContrast(contrast);
-	} else if(settingCommand == 2) { // increase brightness
+	} else if (settingCommand == 2) {  // increase brightness
 		contrast = min(contrast + 20, 255);
 		setGlobalContrast(contrast);
-	} else if(settingCommand == 3) { // set brightness
+	} else if (settingCommand == 3) {  // set brightness
 		contrast = min(contrast + 20, 255);
 		setGlobalContrast(configFile.read());
 	}
 }
 
-void pressKeys () {
+void pressKeys() {
 	byte i = 0;
 	uint8_t key;
 	configFile.read(&key, 1);
@@ -85,7 +101,7 @@ void pressKeys () {
 	}
 }
 
-void sendText () {
+void sendText() {
 	byte i = 0;
 	uint8_t key;
 	configFile.read(&key, 1);
@@ -100,13 +116,13 @@ void sendText () {
 	Keyboard.releaseAll();
 }
 
-void changePage () {
+void changePage() {
 	int16_t pageIndex;
 	configFile.read(&pageIndex, 2);
 	loadPage(pageIndex);
 }
 
-void pressSpecialKey () {
+void pressSpecialKey() {
 	uint16_t key;
 	configFile.read(&key, 2);
 	Consumer.press(key);
@@ -125,7 +141,7 @@ void displayImage(int16_t imageNumber) {
 void loadPage(int16_t pageIndex) {
 	currentPage = pageIndex;
 	for (uint8_t j = 0; j < BD_COUNT; j++) {
-		setMuxAddress(j);
+		setMuxAddress(j, TYPE_DISPLAY);
 		delay(1);
 		displayImage(pageIndex * BD_COUNT + j);
 	}
@@ -134,6 +150,7 @@ void loadPage(int16_t pageIndex) {
 void executeButtonConfig(uint8_t buttonIndex, uint8_t buttonUp,
 						 uint8_t secondary) {
 	if (configFile) {
+		timeOutStartTime = millis();
 		// + 1 because of the 1 header row with 16 bytes
 		configFile.seek((BD_COUNT * currentPage + buttonIndex + 1) * 16 +
 						8 * secondary);
@@ -200,18 +217,22 @@ void executeButtonConfig(uint8_t buttonIndex, uint8_t buttonUp,
 	}
 }
 void checkButtonState(uint8_t buttonIndex) {
-	setMuxAddress(buttonIndex);
-	uint8_t state = digitalRead(6);
+	setMuxAddress(buttonIndex, TYPE_BUTTON);
+	uint8_t state = digitalRead(BUTTON_PIN);
 	uint32_t ms = millis();
 	uint32_t duration = ms - downTime[buttonIndex];
 	if (duration == ms) duration = 0;
 	if (state != buttonIsUp[buttonIndex] ||
 		(duration >= LONG_PRESS_DURATION && longPressed[buttonIndex] == 0 &&
 		 buttonIsUp[buttonIndex] == BUTTON_DOWN)) {
-		if (duration >= LONG_PRESS_DURATION) {
-			longPressed[buttonIndex] = 1;
+		if (timeOut == true) {
+			switchScreensOn();
+		} else {
+			if (duration >= LONG_PRESS_DURATION) {
+				longPressed[buttonIndex] = 1;
+			}
+			executeButtonConfig(buttonIndex, state, 0);
 		}
-		executeButtonConfig(buttonIndex, state, 0);
 	}
 	buttonIsUp[buttonIndex] = state;
 }
@@ -221,18 +242,18 @@ void initAllDisplays() {
 		buttonIsUp[buttonIndex] = 1;
 		downTime[buttonIndex] = 0;
 		longPressed[buttonIndex] = 0;
-		setMuxAddress(buttonIndex);
+		setMuxAddress(buttonIndex, TYPE_DISPLAY);
 		delay(1);
 		oledInit(0x3c, 0, 0);
 		oledFill(255);
 	}
 }
 
-
 void loadConfigFile() {
 	configFile = SD.open(CONFIG_NAME, FILE_READ);
 	configFile.seek(2);
 	configFile.read(&fileImageDataOffset, 2);
+	pageCount = (fileImageDataOffset - 1) / BD_COUNT;
 	fileImageDataOffset = fileImageDataOffset * 16;
 }
 
@@ -252,12 +273,12 @@ void dumpConfigFileOverSerial() {
 	configFile.seekSet(0);
 	if (configFile.available()) {
 		Serial.println(configFile.fileSize());
-		byte buff[512];
-		int available;
+		byte buff[SERIAL_TX_BUFFER_SIZE] = {0};
+		int read;
 		do {
-			available = configFile.read(buff, 512);
-			Serial.write(buff, 512);
-		} while (available >= 512);
+			read = configFile.read(buff, SERIAL_TX_BUFFER_SIZE);
+			Serial.write(buff, read);
+		} while (read >= SERIAL_TX_BUFFER_SIZE);
 	}
 }
 
@@ -279,11 +300,8 @@ void _openTempFile() {
 long _getSerialFileSize() {
 	char numberChars[10];
 	FILL_BUFFER();
-	byte fileSizeLoopCounter = 0;
-	while (fileSizeLoopCounter < 9) {
-		numberChars[fileSizeLoopCounter++] = Serial.read();
-	};
-	numberChars[9] = '\n';
+	size_t len = Serial.readBytesUntil('\n', numberChars, 10);
+	numberChars[len] = '\n';
 	return atol(numberChars);
 }
 
@@ -295,19 +313,18 @@ void saveNewConfigFileFromSerial() {
 	unsigned int chunkLength;
 	FILL_BUFFER();
 	do {
-		FILL_BUFFER();
-		byte input[512];
-		chunkLength = Serial.readBytes(input, 512);
+		byte input[SERIAL_RX_BUFFER_SIZE];
+		chunkLength = Serial.readBytes(input, SERIAL_RX_BUFFER_SIZE);
+		if (chunkLength == 0) break;
 		receivedBytes += chunkLength;
-		Serial.println(receivedBytes);
-		if (chunkLength != 0) configFile.write(input, chunkLength);
-
-	} while (chunkLength == 512);
-	if(receivedBytes == fileSize) {
+		if (!(receivedBytes % 4096) || receivedBytes == fileSize)
+			Serial.println(receivedBytes);
+		configFile.write(input, chunkLength);
+	} while (chunkLength == SERIAL_RX_BUFFER_SIZE && receivedBytes < fileSize);
+	if (receivedBytes == fileSize) {
 		_renameTempFileToConfigFile(CONFIG_NAME);
 	}
 	configFile.close();
-
 }
 
 void postSetup() {
@@ -315,4 +332,26 @@ void postSetup() {
 	configFile.seekSet(4);
 	setGlobalContrast(configFile.read());
 	loadPage(0);
+}
+
+void checkTimeOut() {
+	unsigned long currentTime = millis();
+	if (currentTime - timeOutStartTime >= TIMEOUT_TIME) {
+		if (timeOut == false) switchScreensOff();
+	}
+}
+
+void switchScreensOff() {
+	timeOut = true;
+	for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
+		setMuxAddress(buttonIndex, TYPE_DISPLAY);
+		delay(1);
+		oledFill(0);
+	}
+}
+
+void switchScreensOn() {
+	timeOut = false;
+	timeOutStartTime = millis();
+	loadPage(currentPage);
 }

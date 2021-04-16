@@ -1,9 +1,24 @@
 #define BD_COUNT 6
 
+// for ryan aukes 5x3 pcb layout or
+// if your screens are not in 1..n order
+// #define CUSTOM_ORDER
+#ifdef CUSTOM_ORDER
+#define ADDRESS_TO_SCREEN \
+	{ 13, 11, 8, 5, 2, 14, 10, 7, 4, 1, 12, 9, 6, 3, 0 }
+#define ADDRESS_TO_BUTTON \
+	{ 12, 14, 6, 5, 2, 11, 13, 7, 4, 1, 10, 9, 8, 3, 0 }
+#endif
+
+#define TIMEOUT_TIME 0L	 // Screens turns never off
+// #define TIMEOUT_TIME 5UL * 60UL * 1000UL // Screens turn off after 5 minutes;
+
 // ChipSelect pin for SD card spi
 #define SD_CS_PIN 10
 
 // address pins for the multiplexers
+// ryan aukes 5x3 5,6,7,8,9
+#define BUTTON_PIN 6
 #define S0_PIN 7
 #define S1_PIN 8
 #define S2_PIN 9
@@ -31,13 +46,14 @@
 // from display to display
 #define PRE_CHARGE_PERIOD 0x11
 
-// Minimum Brightness value for displays. If your displays image quality gets worse at lower
-// brighness choose a bigger value here
+// Minimum Brightness value for displays. If your displays image quality gets
+// worse at lower brighness choose a bigger value here
 #define MINIMUM_BRIGHTNESS 0x20
 // #define MINIMUM_BRIGHTNESS 0x00 //almost dark, good displays only
 // #define MINIMUM_BRIGHTNESS 0x30 //brightest for cheap displays
 
-// if your screen is flickering, choose a lower number. the worse the screen, the lower the number.
+// if your screen is flickering, choose a lower number. the worse the screen,
+// the lower the number.
 #define REFRESH_FREQUENCY 0xf2
 // #define REFRESH_FREQUENCY 0xf1
 // #define REFRESH_FREQUENCY 0xc1

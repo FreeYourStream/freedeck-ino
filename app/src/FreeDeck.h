@@ -1,5 +1,7 @@
 #include <Arduino.h>
-
+extern int currentPage;
+extern int pageCount;
+int getCurrentPage();
 int getBitValue(int number, int place);
 void setMuxAddress(int address);
 void displayImage(int16_t imageNumber);
@@ -15,3 +17,6 @@ void dumpConfigFileOverSerial();
 void _renameTempFileToConfigFile();
 void saveNewConfigFileFromSerial();
 void postSetup();
+void checkTimeOut();
+void switchScreensOff();
+void switchScreensOn();
