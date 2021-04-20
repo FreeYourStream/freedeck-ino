@@ -63,14 +63,6 @@ public:
     }
   }
 
-  void onPress(CallbackType pressCallback) {
-    onPressCallback = pressCallback;
-  }
-
-  void onRelease(CallbackType releaseCallback) {
-    onReleaseCallback = releaseCallback;
-  }
-
 private:
   void callShortPress() {
     if (onPressCallback != NULL)
