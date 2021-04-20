@@ -1,32 +1,25 @@
 #include "./FreeDeck.h"
 
+#include "../settings.h"
+#include "./Button.hpp"
+#include "./OledTurboLight.h"
 #include <HID-Project.h>
 #include <SPI.h>
 #include <SdFat.h>
 #include <avr/power.h>
 
-#include "../settings.h"
-#include "./OledTurboLight.h"
-
-#define BUTTON_DOWN 0
-#define BUTTON_UP 1
 #define TYPE_DISPLAY 0
 #define TYPE_BUTTON 1
 
-typedef void (*CallbackType)(uint8_t index);
-
 SdFat SD;
 File configFile;
+Button buttons[BD_COUNT];
 
 int currentPage = 0;
 int pageCount;
 unsigned short int fileImageDataOffset = 0;
 short int contrast = 0;
 unsigned char imageCache[IMG_CACHE_SIZE];
-uint8_t buttonIsUp[BD_COUNT] = {1};
-uint32_t downTime[BD_COUNT] = {0};
-uint8_t longPressed[BD_COUNT] = {0};
-uint8_t pageChanged = 0;
 
 #ifdef CUSTOM_ORDER
 byte addressToScreen[] = ADDRESS_TO_SCREEN;
@@ -35,99 +28,6 @@ byte addressToButton[] = ADDRESS_TO_BUTTON;
 
 unsigned long timeOutStartTime;
 bool timeOut = false;
-
-class Button {
-public:
-  uint8_t index = 0;
-  boolean state = BUTTON_UP;
-  uint32_t pressedSince = 0;
-  boolean longPressExecuted = false;
-
-  boolean hasSecondary = 0;
-
-  CallbackType shortPressCallback;
-  CallbackType shortReleaseCallback;
-  CallbackType longPressCallback;
-  CallbackType longReleaseCallback;
-
-  void setIndex(uint8_t newIndex) { index = newIndex; }
-
-  void update(boolean new_state) {
-    // if the button is being held down and we are waiting for
-    // the secondary function to fire
-    if (state == BUTTON_DOWN && state == new_state) { // still being pressed down
-      if (!hasSecondary)
-        return;
-      if (longPressExecuted == true)
-        return;
-
-      uint32_t now = millis();
-      uint32_t passedTime = now - pressedSince;
-
-      if (passedTime < LONG_PRESS_DURATION)
-        return;
-      longPressExecuted = true;
-      callLongPress();
-
-    } else if (state == BUTTON_UP && new_state == BUTTON_DOWN) { // getting pressed down
-      state = new_state;
-      if (hasSecondary) {
-        // to decide if we need to execute long or short press
-        // start couting for how long we press the button
-        pressedSince = millis();
-      } else {
-        callShortPress();
-      }
-    } else if (state == BUTTON_DOWN && new_state == BUTTON_UP) { // getting released
-      state = new_state;
-      if (hasSecondary) {
-        uint32_t now = millis();
-        uint32_t passedTime = now - pressedSince;
-        pressedSince = 0;
-        if (passedTime < LONG_PRESS_DURATION) {
-          callShortPress();
-          delay(16);
-          callShortRelease();
-        } else {
-          longPressExecuted = false;
-          callLongRelease();
-        }
-      } else {
-        callShortRelease();
-      }
-    }
-  }
-
-  void onShortPress(CallbackType pressCallback, CallbackType releaseCallback) {
-    shortPressCallback = pressCallback;
-    shortReleaseCallback = releaseCallback;
-  }
-
-  void onLongPress(CallbackType pressCallback, CallbackType releaseCallback) {
-    longPressCallback = pressCallback;
-    longReleaseCallback = releaseCallback;
-  }
-
-private:
-  void callShortPress() {
-    if (shortPressCallback != NULL)
-      shortPressCallback(index);
-  }
-  void callShortRelease() {
-    if (shortReleaseCallback != NULL)
-      shortReleaseCallback(index);
-  }
-  void callLongPress() {
-    if (longPressCallback != NULL)
-      longPressCallback(index);
-  }
-  void callLongRelease() {
-    if (longReleaseCallback != NULL)
-      longReleaseCallback(index);
-  }
-};
-
-Button buttons[BD_COUNT];
 
 int getBitValue(int number, int place) {
   return (number & (1 << place)) >> place;
@@ -222,7 +122,7 @@ void changePage() {
 void pressSpecialKey() {
   uint16_t key;
   configFile.read(&key, 2);
-  Consumer.press(key);
+  Consumer.press((ConsumerKeycode)key);
 }
 
 void displayImage(int16_t imageNumber) {
@@ -242,8 +142,8 @@ uint8_t getCommand(uint8_t button, uint8_t secondary) {
   return command;
 }
 
-void onShortPress(uint8_t buttonIndex) {
-  uint8_t command = getCommand(buttonIndex, false) & 0xf;
+void onButtonPress(uint8_t buttonIndex, uint8_t secondary) {
+  uint8_t command = getCommand(buttonIndex, secondary) & 0xf;
   if (command == 1) {
     changePage();
   } else if (command == 0) {
@@ -257,32 +157,8 @@ void onShortPress(uint8_t buttonIndex) {
   }
 }
 
-void onLongPress(uint8_t buttonIndex) {
-  uint8_t command = getCommand(buttonIndex, true) & 0xf;
-  if (command == 1) {
-    changePage();
-  } else if (command == 0) {
-    pressKeys();
-  } else if (command == 3) {
-    pressSpecialKey();
-  } else if (command == 4) {
-    sendText();
-  } else if (command == 5) {
-    setSetting();
-  }
-}
-
-void onShortRelease(uint8_t buttonIndex) {
-  uint8_t command = getCommand(buttonIndex, false) & 0xf;
-  if (command == 0) {
-    Keyboard.releaseAll();
-  } else if (command == 3) {
-    Consumer.releaseAll();
-  }
-}
-
-void onLongRelease(uint8_t buttonIndex) {
-  uint8_t command = getCommand(buttonIndex, true) & 0xf;
+void onButtonRelease(uint8_t buttonIndex, uint8_t secondary) {
+  uint8_t command = getCommand(buttonIndex, secondary) & 0xf;
   if (command == 0) {
     Keyboard.releaseAll();
   } else if (command == 3) {
@@ -293,12 +169,10 @@ void onLongRelease(uint8_t buttonIndex) {
 void loadPage(int16_t pageIndex) {
   currentPage = pageIndex;
   for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
-    configFile.seek((BD_COUNT * currentPage + buttonIndex + 1) * 16 /*+8 * secondary*/);
-    uint8_t command;
-    command = configFile.read();
+    uint8_t command = getCommand(buttonIndex, false);
     buttons[buttonIndex].hasSecondary = command > 15;
-    buttons[buttonIndex].onShortPress(onShortPress, onShortRelease);
-    buttons[buttonIndex].onLongPress(onLongPress, onLongRelease);
+    buttons[buttonIndex].onPress(onButtonPress);
+    buttons[buttonIndex].onRelease(onButtonRelease);
 
     setMuxAddress(buttonIndex, TYPE_DISPLAY);
     delay(1);
@@ -306,105 +180,16 @@ void loadPage(int16_t pageIndex) {
   }
 }
 
-void executeButtonConfig(uint8_t buttonIndex, uint8_t buttonUp,
-                         uint8_t secondary) {
-  if (configFile) {
-    timeOutStartTime = millis();
-    // + 1 because of the 1 header row with 16 bytes
-    configFile.seek((BD_COUNT * currentPage + buttonIndex + 1) * 16 +
-                    8 * secondary);
-    uint8_t command;
-    command = configFile.read();
-    if (buttonUp == 1) {
-      if (pageChanged) {
-        pageChanged = 0;
-        longPressed[buttonIndex] = 0;
-        downTime[buttonIndex] = 0;
-        return;
-      }
-      if (command == 0) {
-        Keyboard.releaseAll();
-      } else if (command == 3) {
-        Consumer.releaseAll();
-      }
-      if (command >= 16) {
-        if (longPressed[buttonIndex] == 1) {
-          executeButtonConfig(buttonIndex, buttonUp, 1);
-          longPressed[buttonIndex] = 0;
-          downTime[buttonIndex] = 0;
-        } else {
-          longPressed[buttonIndex] = 0;
-          downTime[buttonIndex] = 0;
-          if (command == 17) {
-            changePage();
-          } else if (command == 16) {
-            pressKeys();
-            delay(25);
-            Keyboard.releaseAll();
-          } else if (command == 19) {
-            pressSpecialKey();
-            delay(25);
-            Consumer.releaseAll();
-          } else if (command == 20) {
-            sendText();
-          } else if (command == 21) {
-            setSetting();
-          }
-        }
-      }
-    } else if (buttonUp == 0) {
-      if (command == 1) {
-        pageChanged = 1;
-        changePage();
-      } else if (command == 0) {
-        pressKeys();
-      } else if (command == 3) {
-        pressSpecialKey();
-      } else if (command == 4) {
-        sendText();
-      } else if (command == 5) {
-        setSetting();
-      }
-      if (command >= 16) {
-        if (longPressed[buttonIndex] == 1) {
-          executeButtonConfig(buttonIndex, buttonUp, 1);
-        } else {
-          downTime[buttonIndex] = millis();
-        }
-      }
-    }
-  }
-}
 void checkButtonState(uint8_t buttonIndex) {
   setMuxAddress(buttonIndex, TYPE_BUTTON);
   uint8_t state = digitalRead(BUTTON_PIN);
   buttons[buttonIndex].update(state);
   return;
-  // uint32_t ms = millis();
-  // uint32_t duration = ms - downTime[buttonIndex];
-  // if (duration == ms)
-  //   duration = 0;
-  // if (state != buttonIsUp[buttonIndex] ||
-  //     (duration >= LONG_PRESS_DURATION && longPressed[buttonIndex] == 0 &&
-  //      buttonIsUp[buttonIndex] == BUTTON_DOWN)) {
-  //   if (timeOut == true) {
-  //     switchScreensOn();
-  //   } else {
-  //     if (duration >= LONG_PRESS_DURATION) {
-  //       longPressed[buttonIndex] = 1;
-  //     }
-  //     executeButtonConfig(buttonIndex, state, 0);
-  //   }
-  // }
-  // buttonIsUp[buttonIndex] = state;
 }
 
 void initAllDisplays() {
   for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
     buttons[buttonIndex].index = buttonIndex;
-    buttonIsUp[buttonIndex] = 1;
-    downTime[buttonIndex] = 0;
-    longPressed[buttonIndex] = 0;
     setMuxAddress(buttonIndex, TYPE_DISPLAY);
     delay(1);
     oledInit(0x3c, 0, 0);
@@ -421,14 +206,8 @@ void loadConfigFile() {
 }
 
 void initSdCard() {
-  int i = 0;
-  //, SD_SCK_MHZ(50)
-  while (!SD.begin(SD_CS_PIN, SD_SCK_MHZ(16)) && i <= 100) {
-    i++;
-  }
-  if (i == 100) {
-    while (1)
-      ;
+  while (!SD.begin(SD_CS_PIN, SD_SCK_MHZ(16))) {
+    delay(1);
   }
 }
 
