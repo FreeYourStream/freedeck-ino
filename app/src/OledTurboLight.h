@@ -5,11 +5,6 @@
 #define I2CDDR DDRD
 // setting a port instruction takes 1 clock cycle
 #define I2C_CLK_LOW() I2CPORT = bOld
-#define FILL_BUFFER()             \
-	while (!Serial.available()) { \
-		delay(1);                 \
-	};
-
 static inline void i2cByteOut(uint8_t b);
 void i2cBegin(uint8_t addr);
 void i2cWrite(uint8_t *pData, uint8_t bLen);

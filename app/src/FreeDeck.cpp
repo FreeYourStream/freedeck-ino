@@ -1,7 +1,7 @@
 #include "./FreeDeck.h"
 
 #include "../settings.h"
-#include "./Button.hpp"
+#include "./Button.h"
 #include "./OledTurboLight.h"
 #include <HID-Project.h>
 #include <SPI.h>
@@ -241,7 +241,6 @@ void _openTempFile() {
 
 long _getSerialFileSize() {
   char numberChars[10];
-  FILL_BUFFER();
   size_t len = Serial.readBytesUntil('\n', numberChars, 10);
   numberChars[len] = '\n';
   return atol(numberChars);
@@ -253,7 +252,6 @@ void saveNewConfigFileFromSerial() {
 
   long receivedBytes = 0;
   unsigned int chunkLength;
-  FILL_BUFFER();
   do {
     byte input[SERIAL_RX_BUFFER_SIZE];
     chunkLength = Serial.readBytes(input, SERIAL_RX_BUFFER_SIZE);
