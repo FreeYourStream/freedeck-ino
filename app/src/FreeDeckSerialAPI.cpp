@@ -1,5 +1,5 @@
 #include "./FreeDeckSerialAPI.h"
-
+#include "./version.h"
 #include <limits.h>
 
 #include "./FreeDeck.h"
@@ -34,7 +34,7 @@ unsigned long int readSerialBinary() {
 void handleAPI() {
   unsigned long command = readSerialBinary();
   if (command == 0x10) { // get firmware version
-    Serial.println(F("2.0.0"));
+    Serial.println(F(FW_VERSION));
   }
   if (command == 0x20) { // read config
     dumpConfigFileOverSerial();
