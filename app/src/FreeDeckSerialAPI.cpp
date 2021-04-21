@@ -1,9 +1,67 @@
 #include "./FreeDeckSerialAPI.h"
-#include "./version.h"
+#include "../settings.h"
+#include "../version.h"
 #include <limits.h>
 
 #include "./FreeDeck.h"
 #include "./OledTurboLight.h"
+
+void _dumpConfigFileOverSerial() {
+  configFile.seekSet(0);
+  if (configFile.available()) {
+    Serial.println(configFile.fileSize());
+    byte buff[SERIAL_TX_BUFFER_SIZE] = {0};
+    int read;
+    do {
+      read = configFile.read(buff, SERIAL_TX_BUFFER_SIZE);
+      Serial.write(buff, read);
+    } while (read >= SERIAL_TX_BUFFER_SIZE);
+  }
+}
+
+void _renameTempFileToConfigFile(char const *path) {
+  if (SD.exists(path)) {
+    SD.remove(path);
+  }
+  configFile.rename(SD.vwd(), path);
+}
+
+void _openTempFile() {
+  if (SD.exists(TEMP_FILE)) {
+    SD.remove(TEMP_FILE);
+  }
+  configFile = SD.open(TEMP_FILE, O_WRONLY | O_CREAT);
+  configFile.seekSet(0);
+}
+
+long _getSerialFileSize() {
+  char numberChars[10];
+  size_t len = Serial.readBytesUntil('\n', numberChars, 10);
+  numberChars[len] = '\n';
+  return atol(numberChars);
+}
+
+void _saveNewConfigFileFromSerial() {
+  _openTempFile();
+  long fileSize = _getSerialFileSize();
+
+  long receivedBytes = 0;
+  unsigned int chunkLength;
+  do {
+    byte input[SERIAL_RX_BUFFER_SIZE];
+    chunkLength = Serial.readBytes(input, SERIAL_RX_BUFFER_SIZE);
+    if (chunkLength == 0)
+      break;
+    receivedBytes += chunkLength;
+    if (!(receivedBytes % 4096) || receivedBytes == fileSize)
+      Serial.println(receivedBytes);
+    configFile.write(input, chunkLength);
+  } while (chunkLength == SERIAL_RX_BUFFER_SIZE && receivedBytes < fileSize);
+  if (receivedBytes == fileSize) {
+    _renameTempFileToConfigFile(CONFIG_NAME);
+  }
+  configFile.close();
+}
 
 unsigned long int readSerialAscii() {
   char numberChars[10];
@@ -37,10 +95,10 @@ void handleAPI() {
     Serial.println(F(FW_VERSION));
   }
   if (command == 0x20) { // read config
-    dumpConfigFileOverSerial();
+    _dumpConfigFileOverSerial();
   }
   if (command == 0x21) { // write config
-    saveNewConfigFileFromSerial();
+    _saveNewConfigFileFromSerial();
     initAllDisplays();
     delay(200);
     postSetup();
@@ -62,5 +120,17 @@ void handleAPI() {
   }
   if (command == 0x32) { // get page count
     Serial.println(pageCount);
+  }
+}
+
+void handleSerial() {
+  if (Serial.available() > 0) {
+    unsigned long read = readSerialBinary();
+    if (read == 0x3) {
+      handleAPI();
+    }
+    while (Serial.available()) {
+      Serial.read();
+    }
   }
 }

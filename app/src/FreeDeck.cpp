@@ -211,63 +211,6 @@ void initSdCard() {
   }
 }
 
-void dumpConfigFileOverSerial() {
-  configFile.seekSet(0);
-  if (configFile.available()) {
-    Serial.println(configFile.fileSize());
-    byte buff[SERIAL_TX_BUFFER_SIZE] = {0};
-    int read;
-    do {
-      read = configFile.read(buff, SERIAL_TX_BUFFER_SIZE);
-      Serial.write(buff, read);
-    } while (read >= SERIAL_TX_BUFFER_SIZE);
-  }
-}
-
-void _renameTempFileToConfigFile(char const *path) {
-  if (SD.exists(path)) {
-    SD.remove(path);
-  }
-  configFile.rename(SD.vwd(), path);
-}
-
-void _openTempFile() {
-  if (SD.exists(TEMP_FILE)) {
-    SD.remove(TEMP_FILE);
-  }
-  configFile = SD.open(TEMP_FILE, O_WRONLY | O_CREAT);
-  configFile.seekSet(0);
-}
-
-long _getSerialFileSize() {
-  char numberChars[10];
-  size_t len = Serial.readBytesUntil('\n', numberChars, 10);
-  numberChars[len] = '\n';
-  return atol(numberChars);
-}
-
-void saveNewConfigFileFromSerial() {
-  _openTempFile();
-  long fileSize = _getSerialFileSize();
-
-  long receivedBytes = 0;
-  unsigned int chunkLength;
-  do {
-    byte input[SERIAL_RX_BUFFER_SIZE];
-    chunkLength = Serial.readBytes(input, SERIAL_RX_BUFFER_SIZE);
-    if (chunkLength == 0)
-      break;
-    receivedBytes += chunkLength;
-    if (!(receivedBytes % 4096) || receivedBytes == fileSize)
-      Serial.println(receivedBytes);
-    configFile.write(input, chunkLength);
-  } while (chunkLength == SERIAL_RX_BUFFER_SIZE && receivedBytes < fileSize);
-  if (receivedBytes == fileSize) {
-    _renameTempFileToConfigFile(CONFIG_NAME);
-  }
-  configFile.close();
-}
-
 void postSetup() {
   loadConfigFile();
   configFile.seekSet(4);
