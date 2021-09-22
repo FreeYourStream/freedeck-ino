@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #define BD_COUNT 6
 
 // for ryan aukes 5x3 pcb layout or
@@ -5,12 +6,12 @@
 // #define CUSTOM_ORDER
 #ifdef CUSTOM_ORDER
 #define ADDRESS_TO_SCREEN \
-	{ 13, 11, 8, 5, 2, 14, 10, 7, 4, 1, 12, 9, 6, 3, 0 }
+  { 13, 11, 8, 5, 2, 14, 10, 7, 4, 1, 12, 9, 6, 3, 0 }
 #define ADDRESS_TO_BUTTON \
-	{ 12, 14, 6, 5, 2, 11, 13, 7, 4, 1, 10, 9, 8, 3, 0 }
+  { 12, 14, 6, 5, 2, 11, 13, 7, 4, 1, 10, 9, 8, 3, 0 }
 #endif
 
-#define TIMEOUT_TIME 0L	 // Screens turns never off
+#define TIMEOUT_TIME 0L // Screens turns never off
 // #define TIMEOUT_TIME 5UL * 60UL * 1000UL // Screens turn off after 5 minutes;
 
 // ChipSelect pin for SD card spi
@@ -61,8 +62,8 @@
 
 // Pin or port numbers for SDA and SCL
 // NOT THE ARDUINO PORT NUMBERS
-#define BB_SDA 2  // ARDUINO:RX_PIN:D0 32U4:20:PD2
-#define BB_SCL 3  // ARDUINO:TX_PIN:D1 32U4:21:PD3
+#define BB_SDA 2 // ARDUINO:RX_PIN:D0 32U4:20:PD2
+#define BB_SCL 3 // ARDUINO:TX_PIN:D1 32U4:21:PD3
 
 #if F_CPU > 8000000L
 // the time to slow down for the displays

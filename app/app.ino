@@ -21,44 +21,33 @@
 #include "./src/FreeDeck.h"
 #include "./src/FreeDeckSerialAPI.h"
 void setup() {
-	Serial.begin(4000000);
-	Serial.setTimeout(100);
-	delay(BOOT_DELAY);
-	Keyboard.begin();
-	Consumer.begin();
-	pinMode(BUTTON_PIN, INPUT_PULLUP);
-	pinMode(S0_PIN, OUTPUT);
+  Serial.begin(4000000);
+  Serial.setTimeout(100);
+  delay(BOOT_DELAY);
+  Keyboard.begin();
+  Consumer.begin();
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
+  pinMode(S0_PIN, OUTPUT);
 #if BD_COUNT > 2
-	pinMode(S1_PIN, OUTPUT);
+  pinMode(S1_PIN, OUTPUT);
 #endif
 #if BD_COUNT > 4
-	pinMode(S2_PIN, OUTPUT);
+  pinMode(S2_PIN, OUTPUT);
 #endif
 #if BD_COUNT > 8
-	pinMode(S3_PIN, OUTPUT);
+  pinMode(S3_PIN, OUTPUT);
 #endif
-	initAllDisplays();
-	delay(100);
-	initSdCard();
-	postSetup();
-}
-
-void handleSerial() {
-	if (Serial.available() > 0) {
-		unsigned long read = readSerialBinary();
-		if (read == 0x3) {
-			handleAPI();
-		}
-		while (Serial.available()) {
-			Serial.read();
-		}
-	}
+  initAllDisplays();
+  delay(100);
+  initSdCard();
+  postSetup();
 }
 
 void loop() {
-	handleSerial();
-	for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
-		checkButtonState(buttonIndex);
-	}
-	if (TIMEOUT_TIME > 0) checkTimeOut();
+  handleSerial();
+  for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
+    checkButtonState(buttonIndex);
+  }
+  if (TIMEOUT_TIME > 0)
+    checkTimeOut();
 }
