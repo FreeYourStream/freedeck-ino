@@ -38,7 +38,7 @@ void Button::update(boolean new_state) {
       pressedSince = 0;
       if (passedTime < LONG_PRESS_DURATION) {
         callShortPress();
-        delay(16);
+        delay(100);
         callShortRelease();
       } else {
         longPressExecuted = false;

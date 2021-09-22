@@ -223,7 +223,7 @@ void oledLoadBMPPart(uint8_t *pBMP, int bytes = 1024, int offset = 0) {
   for (y = 0; y < factor; y++) { // 8 lines of 8 pixels
     oledWriteDataBlock(&pBMP[y * iPitch], iPitch);
   } // for y
-    // oledCachedFlush();
+  // oledCachedFlush();
 } /* oledLoadBMP() */
 //
 // Fill the frame buffer with a uint8_t pattern

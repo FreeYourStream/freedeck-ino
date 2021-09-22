@@ -78,8 +78,9 @@ unsigned long int readSerialAscii() {
 unsigned long int readSerialBinary() {
   byte numbers[4];
   size_t len = Serial.readBytesUntil('\n', numbers, 4);
-  if (len == 0)
-    return ULONG_MAX;
+  if (len == 0) {
+    return ULONG_LONG_MAX;
+  }
   unsigned long int number = 0;
   for (byte i = 0; i < len; i++) {
     if (numbers[i] == 13)
