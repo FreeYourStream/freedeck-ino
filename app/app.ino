@@ -15,11 +15,10 @@
 // License along with this program. If not, see
 // <https://www.gnu.org/licenses/>.
 
-#include <HID-Project.h>
-
 #include "./settings.h"
 #include "./src/FreeDeck.h"
 #include "./src/FreeDeckSerialAPI.h"
+#include <HID-Project.h>
 void setup() {
   Serial.begin(4000000);
   Serial.setTimeout(100);

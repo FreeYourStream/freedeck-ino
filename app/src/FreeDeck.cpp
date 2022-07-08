@@ -171,7 +171,7 @@ void loadPage(int16_t pageIndex) {
   for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
     uint8_t command = getCommand(buttonIndex, false);
     buttons[buttonIndex].hasSecondary = command > 15;
-    buttons[buttonIndex].onPressCallback = onButtonPress;
+    buttons[buttonIndex].onPressCallback = onButtonPress; // to do: only do this initially
     buttons[buttonIndex].onReleaseCallback = onButtonRelease;
 
     setMuxAddress(buttonIndex, TYPE_DISPLAY);
