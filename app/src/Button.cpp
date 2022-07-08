@@ -4,7 +4,7 @@
 #define BUTTON_UP 1
 typedef void (*CallbackType)(uint8_t index, uint8_t secondary);
 
-void Button::update(boolean new_state) {
+void Button::update(bool new_state) {
   // if the button is being held down and we are waiting for
   // the secondary function to fire
   if (state == BUTTON_UP && new_state == BUTTON_DOWN) { // getting pressed down

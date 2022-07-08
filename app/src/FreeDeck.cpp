@@ -17,6 +17,7 @@ Button buttons[BD_COUNT];
 
 int currentPage = 0;
 int pageCount;
+uint16_t timeout_sec = TIMEOUT_TIME;
 unsigned short int fileImageDataOffset = 0;
 short int contrast = 0;
 unsigned char imageCache[IMG_CACHE_SIZE];
@@ -26,8 +27,7 @@ byte addressToScreen[] = ADDRESS_TO_SCREEN;
 byte addressToButton[] = ADDRESS_TO_BUTTON;
 #endif
 
-unsigned long timeOutStartTime;
-bool timeOut = false;
+unsigned long last_action;
 
 int getBitValue(int number, int place) {
   return (number & (1 << place)) >> place;
@@ -70,6 +70,19 @@ void setGlobalContrast(unsigned short c) {
     delay(1);
     oledSetContrast(c);
   }
+}
+
+bool wake_display_if_needed() {
+  if (timeout_sec == 0) {
+    last_action = millis();
+    return false;
+  }
+  if (millis() - last_action > (timeout_sec * 1000L)) {
+    switchScreensOn();
+    return true;
+  }
+  last_action = millis();
+  return false;
 }
 
 void setSetting() {
@@ -143,6 +156,8 @@ uint8_t getCommand(uint8_t button, uint8_t secondary) {
 }
 
 void onButtonPress(uint8_t buttonIndex, uint8_t secondary) {
+  if (wake_display_if_needed())
+    return;
   uint8_t command = getCommand(buttonIndex, secondary) & 0xf;
   if (command == 1) {
     changePage();
@@ -171,7 +186,7 @@ void loadPage(int16_t pageIndex) {
   for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
     uint8_t command = getCommand(buttonIndex, false);
     buttons[buttonIndex].hasSecondary = command > 15;
-    buttons[buttonIndex].onPressCallback = onButtonPress;
+    buttons[buttonIndex].onPressCallback = onButtonPress; // to do: only do this initially
     buttons[buttonIndex].onReleaseCallback = onButtonRelease;
 
     setMuxAddress(buttonIndex, TYPE_DISPLAY);
@@ -203,6 +218,13 @@ void loadConfigFile() {
   configFile.read(&fileImageDataOffset, 2);
   pageCount = (fileImageDataOffset - 1) / BD_COUNT;
   fileImageDataOffset = fileImageDataOffset * 16;
+
+  // configFile.seekSet(4);
+  setGlobalContrast(configFile.read());
+
+  char timeout_buf[2];
+  configFile.read(timeout_buf, 2);
+  timeout_sec = timeout_buf[0] | timeout_buf[1] << 8;
 }
 
 void initSdCard() {
@@ -213,22 +235,19 @@ void initSdCard() {
 
 void postSetup() {
   loadConfigFile();
-  configFile.seekSet(4);
-  setGlobalContrast(configFile.read());
 
   loadPage(0);
 }
 
-void checkTimeOut() {
-  unsigned long currentTime = millis();
-  if (currentTime - timeOutStartTime >= TIMEOUT_TIME) {
-    if (timeOut == false)
-      switchScreensOff();
+void sleepTask() {
+  if (timeout_sec == 0)
+    return;
+  if (millis() - last_action >= (timeout_sec * 1000)) {
+    switchScreensOff();
   }
 }
 
 void switchScreensOff() {
-  timeOut = true;
   for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
     setMuxAddress(buttonIndex, TYPE_DISPLAY);
     delay(1);
@@ -237,7 +256,6 @@ void switchScreensOff() {
 }
 
 void switchScreensOn() {
-  timeOut = false;
-  timeOutStartTime = millis();
+  last_action = millis();
   loadPage(currentPage);
 }

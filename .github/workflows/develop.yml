@@ -1,0 +1,16 @@
+name: dev build
+on:
+  push:
+    branches:
+      - "develop"
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Actions for Discord
+        uses: Ilshidur/action-discord@0.0.2
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.WEBHOOK_URL_FIRMWARE_DEV }}
+        with:
+          args: "A new freedeck arduino develop firmware has been released! https://github.com/FreeYourStream/freedeck-ino"
