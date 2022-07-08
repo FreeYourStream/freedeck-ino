@@ -44,9 +44,8 @@ void setup() {
 
 void loop() {
   handleSerial();
+  sleepTask();
   for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
     checkButtonState(buttonIndex);
   }
-  if (TIMEOUT_TIME > 0)
-    checkTimeOut();
 }

@@ -6,9 +6,10 @@
 
 extern int currentPage;
 extern int pageCount;
+extern uint16_t timeout_sec;
 extern File configFile;
 extern SdFat SD;
-
+extern unsigned long last_action;
 int getBitValue(int number, int place);
 void setMuxAddress(int address, uint8_t type = TYPE_DISPLAY);
 void setGlobalContrast(unsigned short c);
@@ -27,6 +28,6 @@ void initAllDisplays();
 void loadConfigFile();
 void initSdCard();
 void postSetup();
-void checkTimeOut();
+void sleepTask();
 void switchScreensOff();
 void switchScreensOn();

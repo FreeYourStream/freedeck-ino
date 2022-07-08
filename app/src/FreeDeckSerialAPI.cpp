@@ -1,6 +1,7 @@
 #include "./FreeDeckSerialAPI.h"
 #include "../settings.h"
 #include "../version.h"
+#include <HID-Project.h>
 #include <limits.h>
 
 #include "./FreeDeck.h"
@@ -106,13 +107,18 @@ void handleAPI() {
     delay(200);
   }
   if (command == 0x30) { // get current page
-    Serial.println(currentPage);
+    if (last_action + PAGE_CHANGE_SERIAL_TIMEOUT < millis())
+      Serial.println(currentPage);
+    else
+      Serial.println(currentPage * -1);
   }
   if (command == 0x31) { // set current page
     unsigned long targetPage = readSerialAscii();
     if (targetPage == ULONG_MAX)
       return;
     if (targetPage <= pageCount) {
+      Keyboard.releaseAll();
+      Consumer.releaseAll();
       loadPage(targetPage);
       Serial.println(OK);
     } else {

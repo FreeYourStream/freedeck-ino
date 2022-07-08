@@ -13,6 +13,9 @@
 
 #define TIMEOUT_TIME 0L // Screens turns never off
 // #define TIMEOUT_TIME 5UL * 60UL * 1000UL // Screens turn off after 5 minutes;
+// #define WAKE_ON_GET_PAGE_SERIAL // will wake up the displays everytime you focus another window
+#define WAKE_ON_SET_PAGE_SERIAL // will only wake up the display if you focus a new window that has
+                                // a configurator page
 
 // ChipSelect pin for SD card spi
 #define SD_CS_PIN 10
@@ -34,6 +37,7 @@
 // the duration it takes after a long press is triggered
 // maybe move this to the configurator?
 #define LONG_PRESS_DURATION 300
+#define PAGE_CHANGE_SERIAL_TIMEOUT 1500
 
 // the delay to wait for everything to "boot"
 // increase to 1500-1800 or higher if some displays dont
