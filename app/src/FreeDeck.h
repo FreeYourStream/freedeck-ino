@@ -31,3 +31,4 @@ void postSetup();
 void sleepTask();
 void switchScreensOff();
 void switchScreensOn();
+bool wake_display_if_needed();

@@ -111,6 +111,9 @@ void handleAPI() {
       Serial.println(currentPage);
     else
       Serial.println(currentPage * -1);
+#ifdef WAKE_ON_GET_PAGE_SERIAL
+    wake_display_if_needed();
+#endif
   }
   if (command == 0x31) { // set current page
     unsigned long targetPage = readSerialAscii();
@@ -124,6 +127,9 @@ void handleAPI() {
     } else {
       Serial.println(ERROR);
     }
+#ifdef WAKE_ON_SET_PAGE_SERIAL
+    wake_display_if_needed();
+#endif
   }
   if (command == 0x32) { // get page count
     Serial.println(pageCount);
