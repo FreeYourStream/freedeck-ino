@@ -159,9 +159,7 @@ void onButtonPress(uint8_t buttonIndex, uint8_t secondary, bool leave) {
   if (wake_display_if_needed())
     return;
   uint8_t command = getCommand(buttonIndex, secondary) & 0xf;
-  if (command == 1) {
-    changePage();
-  } else if (command == 0) {
+  if (command == 0) {
     pressKeys();
   } else if (command == 3) {
     pressSpecialKey();
@@ -176,6 +174,8 @@ void onButtonRelease(uint8_t buttonIndex, uint8_t secondary, bool leave) {
   uint8_t command = getCommand(buttonIndex, secondary) & 0xf;
   if (command == 0) {
     Keyboard.releaseAll();
+  } else if (command == 1) {
+    changePage();
   } else if (command == 3) {
     Consumer.releaseAll();
   }
