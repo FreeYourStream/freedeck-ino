@@ -110,7 +110,7 @@ void handleAPI() {
     if (last_action + PAGE_CHANGE_SERIAL_TIMEOUT < millis())
       Serial.println(currentPage);
     else
-      Serial.println(currentPage * -1);
+      Serial.println(currentPage * -1 - 1);
 #ifdef WAKE_ON_GET_PAGE_SERIAL
     wake_display_if_needed();
 #endif
