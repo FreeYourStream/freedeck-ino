@@ -127,7 +127,7 @@ void sendText() {
 }
 
 void changePage() {
-  int16_t pageIndex;
+  uint16_t pageIndex;
   configFile.read(&pageIndex, 2);
   loadPage(pageIndex);
 }
@@ -155,7 +155,7 @@ uint8_t getCommand(uint8_t button, uint8_t secondary) {
   return command;
 }
 
-void onButtonPress(uint8_t buttonIndex, uint8_t secondary) {
+void onButtonPress(uint8_t buttonIndex, uint8_t secondary, bool leave) {
   if (wake_display_if_needed())
     return;
   uint8_t command = getCommand(buttonIndex, secondary) & 0xf;
@@ -172,12 +172,16 @@ void onButtonPress(uint8_t buttonIndex, uint8_t secondary) {
   }
 }
 
-void onButtonRelease(uint8_t buttonIndex, uint8_t secondary) {
+void onButtonRelease(uint8_t buttonIndex, uint8_t secondary, bool leave) {
   uint8_t command = getCommand(buttonIndex, secondary) & 0xf;
   if (command == 0) {
     Keyboard.releaseAll();
   } else if (command == 3) {
     Consumer.releaseAll();
+  }
+  if (leave) {
+    configFile.seek((BD_COUNT * currentPage + buttonIndex + 1) * 16 + 8);
+    changePage();
   }
 }
 
@@ -185,7 +189,7 @@ void loadPage(int16_t pageIndex) {
   currentPage = pageIndex;
   for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
     uint8_t command = getCommand(buttonIndex, false);
-    buttons[buttonIndex].hasSecondary = command > 15;
+    buttons[buttonIndex].mode = command >> 4;
     buttons[buttonIndex].onPressCallback = onButtonPress; // to do: only do this initially
     buttons[buttonIndex].onReleaseCallback = onButtonRelease;
 

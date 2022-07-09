@@ -1,7 +1,12 @@
 #include <Arduino.h>
 #define BUTTON_DOWN 0
 #define BUTTON_UP 1
-typedef void (*CallbackType)(uint8_t index, uint8_t secondary);
+
+#define PRIMARY 0
+#define PRIMARY_SECONDARY 1
+#define PRIMARY_LEAVE 2
+
+typedef void (*CallbackType)(uint8_t index, uint8_t secondary, bool leave);
 
 class Button {
 public:
@@ -9,7 +14,7 @@ public:
   boolean state = BUTTON_UP;
   uint32_t pressedSince = 0;
   boolean pressExecuted = false;
-  boolean hasSecondary = 0;
+  uint8_t mode = 0;
 
   CallbackType onPressCallback;
   CallbackType onReleaseCallback;
