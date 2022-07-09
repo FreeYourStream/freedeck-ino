@@ -221,10 +221,7 @@ void loadConfigFile() {
 
   // configFile.seekSet(4);
   setGlobalContrast(configFile.read());
-
-  char timeout_buf[2];
-  configFile.read(timeout_buf, 2);
-  timeout_sec = timeout_buf[0] | timeout_buf[1] << 8;
+  configFile.read(&timeout_sec, 2);
 }
 
 void initSdCard() {
@@ -242,7 +239,7 @@ void postSetup() {
 void sleepTask() {
   if (timeout_sec == 0)
     return;
-  if (millis() - last_action >= (timeout_sec * 1000)) {
+  if (millis() - last_action >= (timeout_sec * 1000L)) {
     switchScreensOff();
   }
 }
