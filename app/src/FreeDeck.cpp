@@ -18,6 +18,7 @@ Button buttons[BD_COUNT];
 int currentPage = 0;
 int pageCount;
 uint16_t timeout_sec = TIMEOUT_TIME;
+bool ignore_next = false;
 unsigned short int fileImageDataOffset = 0;
 short int contrast = 0;
 unsigned char imageCache[IMG_CACHE_SIZE];
@@ -127,6 +128,7 @@ void sendText() {
 }
 
 void changePage() {
+  ignore_next = true;
   uint16_t pageIndex;
   configFile.read(&pageIndex, 2);
   loadPage(pageIndex);
@@ -156,11 +158,15 @@ uint8_t getCommand(uint8_t button, uint8_t secondary) {
 }
 
 void onButtonPress(uint8_t buttonIndex, uint8_t secondary, bool leave) {
-  if (wake_display_if_needed())
+  if (wake_display_if_needed()) {
+    ignore_next = true;
     return;
+  }
   uint8_t command = getCommand(buttonIndex, secondary) & 0xf;
   if (command == 0) {
     pressKeys();
+  } else if (command == 1) {
+    changePage();
   } else if (command == 3) {
     pressSpecialKey();
   } else if (command == 4) {
@@ -171,18 +177,21 @@ void onButtonPress(uint8_t buttonIndex, uint8_t secondary, bool leave) {
 }
 
 void onButtonRelease(uint8_t buttonIndex, uint8_t secondary, bool leave) {
+  if (ignore_next) {
+    ignore_next = false;
+    return;
+  }
   uint8_t command = getCommand(buttonIndex, secondary) & 0xf;
   if (command == 0) {
     Keyboard.releaseAll();
-  } else if (command == 1) {
-    changePage();
   } else if (command == 3) {
     Consumer.releaseAll();
   }
-  if (leave) {
+  if (leave && !ignore_next) {
     configFile.seek((BD_COUNT * currentPage + buttonIndex + 1) * 16 + 8);
     changePage();
   }
+  ignore_next = false;
 }
 
 void loadPage(int16_t pageIndex) {
