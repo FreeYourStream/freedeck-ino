@@ -16,9 +16,9 @@ File configFile;
 Button buttons[BD_COUNT];
 
 int currentPage = 0;
+int nextPage = 0;
 int pageCount;
 uint16_t timeout_sec = TIMEOUT_TIME;
-bool ignore_next = false;
 unsigned short int fileImageDataOffset = 0;
 short int contrast = 0;
 unsigned char imageCache[IMG_CACHE_SIZE];
@@ -60,6 +60,12 @@ void setMuxAddress(int address, uint8_t type = TYPE_DISPLAY) {
 #endif
 
   delay(1); // wait for multiplexer to switch
+}
+
+void loadPage(int16_t pageIndex) {
+  currentPage = pageIndex;
+  load_images(pageIndex);
+  load_buttons(pageIndex);
 }
 
 void setGlobalContrast(unsigned short c) {
@@ -127,11 +133,11 @@ void sendText() {
   Keyboard.releaseAll();
 }
 
-void changePage() {
-  ignore_next = true;
+uint16_t get_target_page(uint8_t buttonIndex, uint8_t secondary) {
+  configFile.seekSet((BD_COUNT * currentPage + buttonIndex + 1) * 16 + 8 * secondary + 1);
   uint16_t pageIndex;
   configFile.read(&pageIndex, 2);
-  loadPage(pageIndex);
+  return pageIndex;
 }
 
 void pressSpecialKey() {
@@ -158,15 +164,14 @@ uint8_t getCommand(uint8_t button, uint8_t secondary) {
 }
 
 void onButtonPress(uint8_t buttonIndex, uint8_t secondary, bool leave) {
-  if (wake_display_if_needed()) {
-    ignore_next = true;
+  if (wake_display_if_needed())
     return;
-  }
   uint8_t command = getCommand(buttonIndex, secondary) & 0xf;
   if (command == 0) {
     pressKeys();
   } else if (command == 1) {
-    changePage();
+    nextPage = get_target_page(buttonIndex, secondary);
+    load_images(nextPage);
   } else if (command == 3) {
     pressSpecialKey();
   } else if (command == 4) {
@@ -177,34 +182,38 @@ void onButtonPress(uint8_t buttonIndex, uint8_t secondary, bool leave) {
 }
 
 void onButtonRelease(uint8_t buttonIndex, uint8_t secondary, bool leave) {
-  if (ignore_next) {
-    ignore_next = false;
-    return;
-  }
   uint8_t command = getCommand(buttonIndex, secondary) & 0xf;
   if (command == 0) {
     Keyboard.releaseAll();
+  } else if (command == 1) {
+    currentPage = nextPage;
+    load_buttons(currentPage);
   } else if (command == 3) {
     Consumer.releaseAll();
   }
-  if (leave && !ignore_next) {
+  if (leave) {
     configFile.seek((BD_COUNT * currentPage + buttonIndex + 1) * 16 + 8);
-    changePage();
+    uint16_t pageIndex;
+    configFile.read(&pageIndex, 2);
+    loadPage(pageIndex);
   }
-  ignore_next = false;
 }
 
-void loadPage(int16_t pageIndex) {
-  currentPage = pageIndex;
+void load_images(int16_t pageIndex) {
+  for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
+    setMuxAddress(buttonIndex, TYPE_DISPLAY);
+    displayImage(pageIndex * BD_COUNT + buttonIndex);
+  }
+}
+
+void load_buttons(int16_t pageIndex) {
   for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
     uint8_t command = getCommand(buttonIndex, false);
     buttons[buttonIndex].mode = command >> 4;
     buttons[buttonIndex].onPressCallback = onButtonPress; // to do: only do this initially
     buttons[buttonIndex].onReleaseCallback = onButtonRelease;
 
-    setMuxAddress(buttonIndex, TYPE_DISPLAY);
     delay(1);
-    displayImage(pageIndex * BD_COUNT + buttonIndex);
   }
 }
 
