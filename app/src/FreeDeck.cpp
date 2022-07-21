@@ -22,6 +22,7 @@ uint16_t timeout_sec = TIMEOUT_TIME;
 unsigned short int fileImageDataOffset = 0;
 short int contrast = 0;
 unsigned char imageCache[IMG_CACHE_SIZE];
+bool woke_display = 0;
 
 #ifdef CUSTOM_ORDER
 byte addressToScreen[] = ADDRESS_TO_SCREEN;
@@ -164,7 +165,8 @@ uint8_t getCommand(uint8_t button, uint8_t secondary) {
 }
 
 void onButtonPress(uint8_t buttonIndex, uint8_t secondary, bool leave) {
-  if (wake_display_if_needed())
+  woke_display = wake_display_if_needed();
+  if (woke_display)
     return;
   uint8_t command = getCommand(buttonIndex, secondary) & 0xf;
   if (command == 0) {
@@ -182,6 +184,10 @@ void onButtonPress(uint8_t buttonIndex, uint8_t secondary, bool leave) {
 }
 
 void onButtonRelease(uint8_t buttonIndex, uint8_t secondary, bool leave) {
+  if (woke_display) {
+    woke_display = false;
+    return;
+  }
   uint8_t command = getCommand(buttonIndex, secondary) & 0xf;
   if (command == 0) {
     Keyboard.releaseAll();
