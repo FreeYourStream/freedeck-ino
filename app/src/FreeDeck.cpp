@@ -113,7 +113,13 @@ void pressKeys() {
   uint8_t key;
   configFile.read(&key, 1);
   while (key != 0 && i++ < 7) {
-    Keyboard.press(KeyboardKeycode(key));
+    if (key > 0x80 && key < 0xe0) {
+      key = key - 0x80;
+      Keyboard.release(KeyboardKeycode(key));
+      delay(15);
+    } else {
+      Keyboard.press(KeyboardKeycode(key));
+    }
     configFile.read(&key, 1);
     delay(1);
   }
