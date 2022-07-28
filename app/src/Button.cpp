@@ -16,7 +16,7 @@ void Button::update(bool new_state) {
       callShortPress();
     }
   } else if (state == BUTTON_DOWN && state == new_state) { // still being pressed down
-    if (mode == PRIMARY_SECONDARY || pressExecuted)
+    if (mode != PRIMARY_SECONDARY || pressExecuted)
       return;
 
     uint32_t now = millis();
