@@ -140,6 +140,16 @@ void sendText() {
   Keyboard.releaseAll();
 }
 
+void emit_button_press(uint8_t button_index, bool secondary) {
+  Serial.write(0x3);
+  Serial.print("\r\n");
+  Serial.write(0x10);
+  Serial.print("\r\n");
+  char f_size_str[10];
+  sprintf(f_size_str, "%d\t%d\t%d", currentPage, button_index, secondary);
+  Serial.println(f_size_str);
+}
+
 uint16_t get_target_page(uint8_t buttonIndex, uint8_t secondary) {
   configFile.seekSet((BD_COUNT * currentPage + buttonIndex + 1) * 16 + 8 * secondary + 1);
   uint16_t pageIndex;
@@ -170,15 +180,15 @@ uint8_t getCommand(uint8_t button, uint8_t secondary) {
   return command;
 }
 
-void onButtonPress(uint8_t buttonIndex, uint8_t secondary, bool leave) {
+void onButtonPress(uint8_t button_index, uint8_t secondary, bool leave) {
   woke_display = wake_display_if_needed();
   if (woke_display)
     return;
-  uint8_t command = getCommand(buttonIndex, secondary) & 0xf;
+  uint8_t command = getCommand(button_index, secondary) & 0xf;
   if (command == 0) {
     pressKeys();
   } else if (command == 1) {
-    nextPage = get_target_page(buttonIndex, secondary);
+    nextPage = get_target_page(button_index, secondary);
     load_images(nextPage);
   } else if (command == 3) {
     pressSpecialKey();
@@ -186,6 +196,8 @@ void onButtonPress(uint8_t buttonIndex, uint8_t secondary, bool leave) {
     sendText();
   } else if (command == 5) {
     setSetting();
+  } else if (command == 6) {
+    emit_button_press(button_index, secondary);
   }
 }
 
