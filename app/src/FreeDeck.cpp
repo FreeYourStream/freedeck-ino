@@ -30,6 +30,7 @@ byte addressToButton[] = ADDRESS_TO_BUTTON;
 #endif
 
 unsigned long last_action;
+unsigned long last_human_action;
 
 int getBitValue(int number, int place) {
   return (number & (1 << place)) >> place;
@@ -181,6 +182,7 @@ uint8_t getCommand(uint8_t button, uint8_t secondary) {
 }
 
 void onButtonPress(uint8_t button_index, uint8_t secondary, bool leave) {
+  last_human_action = millis();
   woke_display = wake_display_if_needed();
   if (woke_display)
     return;
@@ -202,6 +204,7 @@ void onButtonPress(uint8_t button_index, uint8_t secondary, bool leave) {
 }
 
 void onButtonRelease(uint8_t buttonIndex, uint8_t secondary, bool leave) {
+  last_human_action = millis();
   if (woke_display) {
     woke_display = false;
     return;

@@ -10,6 +10,7 @@ extern uint16_t timeout_sec;
 extern File configFile;
 extern SdFat SD;
 extern unsigned long last_action;
+extern unsigned long last_human_action;
 int getBitValue(int number, int place);
 void setMuxAddress(int address, uint8_t type = TYPE_DISPLAY);
 void setGlobalContrast(unsigned short c);

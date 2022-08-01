@@ -107,7 +107,7 @@ void handleAPI() {
     delay(200);
   }
   if (command == 0x30) { // get current page
-    if (last_action + PAGE_CHANGE_SERIAL_TIMEOUT < millis())
+    if (last_human_action + PAGE_CHANGE_SERIAL_TIMEOUT < millis())
       Serial.println(currentPage);
     else
       Serial.println(currentPage * -1 - 1);
