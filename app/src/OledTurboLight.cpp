@@ -1,5 +1,6 @@
 #include "./OledTurboLight.h"
 #include "../settings.h"
+#include "./FreeDeck.h"
 #include <Arduino.h>
 
 // some globals
@@ -20,27 +21,27 @@ static inline void i2cByteOut(uint8_t b) {
     if (b & 0x80)
       bOld |= (1 << BB_SDA);
     I2CPORT = bOld;
-    delayMicroseconds(I2C_DELAY);
+    delayMicroseconds(oled_delay);
     I2CPORT |= (1 << BB_SCL);
-    delayMicroseconds(I2C_DELAY);
+    delayMicroseconds(oled_delay);
     I2C_CLK_LOW();
     b <<= 1;
   }                                // for i
                                    // ack bit
   I2CPORT = bOld & ~(1 << BB_SDA); // set data low
-  delayMicroseconds(I2C_DELAY);
+  delayMicroseconds(oled_delay);
   I2CPORT |= (1 << BB_SCL); // toggle clock
-  delayMicroseconds(I2C_DELAY);
+  delayMicroseconds(oled_delay);
   I2C_CLK_LOW();
 } /* i2cByteOut() */
 
 void i2cBegin(uint8_t addr) {
   I2CPORT |= ((1 << BB_SDA) + (1 << BB_SCL));
   I2CDDR |= ((1 << BB_SDA) + (1 << BB_SCL));
-  I2CPORT &= ~(1 << BB_SDA);              // data line low first
-  delayMicroseconds((I2C_DELAY + 1) * 2); // compatibility reasons
-  I2CPORT &= ~(1 << BB_SCL);              // then clock line low is a START signal
-  i2cByteOut(addr << 1);                  // send the slave address
+  I2CPORT &= ~(1 << BB_SDA);               // data line low first
+  delayMicroseconds((oled_delay + 1) * 2); // compatibility reasons
+  I2CPORT &= ~(1 << BB_SCL);               // then clock line low is a START signal
+  i2cByteOut(addr << 1);                   // send the slave address
 } /* i2cBegin() */
 
 void i2cWrite(uint8_t *pData, uint8_t bLen) {
@@ -54,11 +55,11 @@ void i2cWrite(uint8_t *pData, uint8_t bLen) {
       if (b & 0x80)
         bOld |= (1 << BB_SDA);
       I2CPORT = bOld;
-      delayMicroseconds(I2C_DELAY);
+      delayMicroseconds(oled_delay);
       for (i = 0; i < 8; i++) {
         I2CPORT |=
             (1 << BB_SCL); // just toggle SCL, SDA stays the same
-        delayMicroseconds(I2C_DELAY);
+        delayMicroseconds(oled_delay);
         I2C_CLK_LOW();
       }      // for i
     } else { // normal uint8_t needs every bit tested
@@ -68,9 +69,9 @@ void i2cWrite(uint8_t *pData, uint8_t bLen) {
           bOld |= (1 << BB_SDA);
 
         I2CPORT = bOld;
-        delayMicroseconds(I2C_DELAY);
+        delayMicroseconds(oled_delay);
         I2CPORT |= (1 << BB_SCL);
-        delayMicroseconds(I2C_DELAY);
+        delayMicroseconds(oled_delay);
         I2C_CLK_LOW();
         b <<= 1;
       } // for i
@@ -104,32 +105,31 @@ static void I2CWrite(int iAddr, unsigned char *pData, int iLen) {
 //
 // Initializes the OLED controller into "page mode"
 //
-void oledInit(uint8_t bAddr, int bFlip, int bInvert) {
+void oledInit(uint8_t bAddr, uint8_t pre_charge_period, uint8_t refresh_frequency) {
   unsigned char uc[4];
   unsigned char oled_initbuf[] = {
       0x00, 0xae, 0xa8, 0x3f, 0xd3, 0x00, 0x40, 0xa1, 0xc8, 0xda, 0x12,
-      0x81, 0xff, 0xa4, 0xa6, 0xd5, REFRESH_FREQUENCY, 0x8d, 0x14, 0xaf, 0x20, 0x00, 0xd9, PRE_CHARGE_PERIOD, 0xdb, MINIMUM_BRIGHTNESS};
+      0x81, 0xff, 0xa4, 0xa6, 0xd5, refresh_frequency, 0x8d, 0x14, 0xaf, 0x20, 0x00, 0xd9, pre_charge_period, 0xdb, MINIMUM_BRIGHTNESS};
 
   oled_addr = bAddr;
   I2CDDR &= ~(1 << BB_SDA);
   I2CDDR &= ~(1 << BB_SCL); // let them float high
   I2CPORT |= (1 << BB_SDA); // set both lines to get pulled up
-  // delayMicroseconds(I2C_DELAY); // compatibility reasons
   I2CPORT |= (1 << BB_SCL);
 
   I2CWrite(oled_addr, oled_initbuf, sizeof(oled_initbuf));
-  if (bInvert) {
-    uc[0] = 0;    // command
-    uc[1] = 0xa7; // invert command
-    I2CWrite(oled_addr, uc, 2);
-  }
-  if (bFlip) { // rotate display 180
-    uc[0] = 0; // command
-    uc[1] = 0xa0;
-    I2CWrite(oled_addr, uc, 2);
-    uc[1] = 0xc0;
-    I2CWrite(oled_addr, uc, 2);
-  }
+  // if (bInvert) {
+  //   uc[0] = 0;    // command
+  //   uc[1] = 0xa7; // invert command
+  //   I2CWrite(oled_addr, uc, 2);
+  // }
+  // if (bFlip) { // rotate display 180
+  //   uc[0] = 0; // command
+  //   uc[1] = 0xa0;
+  //   I2CWrite(oled_addr, uc, 2);
+  //   uc[1] = 0xc0;
+  //   I2CWrite(oled_addr, uc, 2);
+  // }
 } /* oledInit() */
 //
 // Sends a command to turn off the OLED display

@@ -10,7 +10,7 @@ void i2cBegin(uint8_t addr);
 void i2cWrite(uint8_t *pData, uint8_t bLen);
 void i2cEnd();
 static void I2CWrite(int iAddr, unsigned char *pData, int iLen);
-void oledInit(uint8_t bAddr, int bFlip, int bInvert);
+void oledInit(uint8_t bAddr, uint8_t pre_charge_period, uint8_t refresh_frequency);
 void oledShutdown();
 static void oledWriteCommand(unsigned char c);
 void oledSetContrast(unsigned char ucContrast);

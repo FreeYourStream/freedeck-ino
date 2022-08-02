@@ -20,8 +20,11 @@ int nextPage = 0;
 int pageCount;
 uint16_t timeout_sec = TIMEOUT_TIME;
 unsigned short int fileImageDataOffset = 0;
-short int contrast = 0;
+uint8_t contrast = 0;
 unsigned char imageCache[IMG_CACHE_SIZE];
+uint8_t oled_delay = I2C_DELAY;
+uint8_t pre_charge_period = PRE_CHARGE_PERIOD;
+uint8_t refresh_frequency = REFRESH_FREQUENCY;
 bool woke_display = 0;
 
 #ifdef CUSTOM_ORDER
@@ -251,12 +254,13 @@ void checkButtonState(uint8_t buttonIndex) {
   return;
 }
 
-void initAllDisplays() {
+void initAllDisplays(uint8_t _oled_delay, uint8_t _pre_charge_period, uint8_t _refresh_frequency) {
+  oled_delay = _oled_delay;
   for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
     buttons[buttonIndex].index = buttonIndex;
     setMuxAddress(buttonIndex, TYPE_DISPLAY);
     delay(1);
-    oledInit(0x3c, 0, 0);
+    oledInit(0x3c, _pre_charge_period, _refresh_frequency);
     oledFill(255);
   }
 }
@@ -269,8 +273,20 @@ void loadConfigFile() {
   fileImageDataOffset = fileImageDataOffset * 16;
 
   // configFile.seekSet(4);
-  setGlobalContrast(configFile.read());
+  configFile.read(&contrast, 1);
   configFile.read(&timeout_sec, 2);
+
+  configFile.read(NULL, 1);
+  configFile.read(&oled_delay, 1);
+  configFile.read(&pre_charge_period, 1);
+  configFile.read(&refresh_frequency, 1);
+
+  if (oled_delay == 0)
+    oled_delay = I2C_DELAY;
+  if (pre_charge_period == 0)
+    pre_charge_period = PRE_CHARGE_PERIOD;
+  if (refresh_frequency == 0)
+    refresh_frequency = REFRESH_FREQUENCY;
 }
 
 void initSdCard() {
@@ -281,7 +297,8 @@ void initSdCard() {
 
 void postSetup() {
   loadConfigFile();
-
+  initAllDisplays(oled_delay, pre_charge_period, refresh_frequency);
+  setGlobalContrast(contrast);
   loadPage(0);
 }
 

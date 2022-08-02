@@ -101,7 +101,7 @@ void handleAPI() {
   }
   if (command == 0x21) { // write config
     _saveNewConfigFileFromSerial();
-    initAllDisplays();
+    initAllDisplays(oled_delay, pre_charge_period, refresh_frequency);
     delay(200);
     postSetup();
     delay(200);
@@ -133,6 +133,15 @@ void handleAPI() {
   }
   if (command == 0x32) { // get page count
     Serial.println(pageCount);
+  }
+  if (command == 0x44) { // set current page
+    uint8_t oled_speed = readSerialAscii();
+    uint8_t oled_delay = readSerialAscii();
+    uint8_t pre_charge_period = readSerialAscii();
+    uint8_t refresh_frequency = readSerialAscii();
+    initAllDisplays(oled_delay, pre_charge_period, refresh_frequency);
+    loadPage(currentPage);
+    setGlobalContrast(contrast);
   }
 }
 

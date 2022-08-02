@@ -36,7 +36,7 @@ void setup() {
 #if BD_COUNT > 8
   pinMode(S3_PIN, OUTPUT);
 #endif
-  initAllDisplays();
+  initAllDisplays(I2C_DELAY, PRE_CHARGE_PERIOD, REFRESH_FREQUENCY);
   delay(100);
   initSdCard();
   postSetup();
