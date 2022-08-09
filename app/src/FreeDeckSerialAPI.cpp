@@ -123,9 +123,6 @@ void handleAPI() {
       Keyboard.releaseAll();
       Consumer.releaseAll();
       loadPage(targetPage);
-      Serial.println(OK);
-    } else {
-      Serial.println(ERROR);
     }
 #ifdef WAKE_ON_SET_PAGE_SERIAL
     wake_display_if_needed();
