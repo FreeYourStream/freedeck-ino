@@ -1,9 +1,10 @@
 #include "./FreeDeckSerialAPI.h"
-#include "../settings.h"
-#include "../version.h"
+
 #include <HID-Project.h>
 #include <limits.h>
 
+#include "../settings.h"
+#include "../version.h"
 #include "./FreeDeck.h"
 #include "./OledTurboLight.h"
 
@@ -80,7 +81,7 @@ unsigned long int readSerialBinary() {
   byte numbers[4];
   size_t len = Serial.readBytesUntil('\n', numbers, 4);
   if (len == 0) {
-    return ULONG_LONG_MAX;
+    return ULONG_MAX;
   }
   unsigned long int number = 0;
   for (byte i = 0; i < len; i++) {
@@ -93,29 +94,36 @@ unsigned long int readSerialBinary() {
 
 void handleAPI() {
   unsigned long command = readSerialBinary();
-  if (command == 0x10) { // get firmware version
+  if (command == 0x10) {  // get firmware version
     Serial.println(F(FW_VERSION));
   }
-  if (command == 0x20) { // read config
+  if (command == 0x20) {  // read config
+    if (!has_json) {
+      Serial.println("unavailable");
+      return;
+    }
     _dumpConfigFileOverSerial();
   }
-  if (command == 0x21) { // write config
+  if (command == 0x21) {  // write config
     _saveNewConfigFileFromSerial();
     initAllDisplays(oled_delay, pre_charge_period, refresh_frequency);
     delay(200);
     postSetup();
     delay(200);
   }
-  if (command == 0x30) { // get current page
+  if (command == 0x22) {  // config has json
+    Serial.println(has_json);
+  }
+  if (command == 0x30) {  // get current page
     if (last_human_action + PAGE_CHANGE_SERIAL_TIMEOUT < millis())
       Serial.println(currentPage);
     else
-      Serial.println(currentPage * -1 - 1);
+      Serial.println((int)currentPage * -1 - 1);
 #ifdef WAKE_ON_GET_PAGE_SERIAL
     wake_display_if_needed();
 #endif
   }
-  if (command == 0x31) { // set current page
+  if (command == 0x31) {  // set current page
     unsigned long targetPage = readSerialAscii();
     if (targetPage == ULONG_MAX)
       return;
@@ -128,10 +136,10 @@ void handleAPI() {
     wake_display_if_needed();
 #endif
   }
-  if (command == 0x32) { // get page count
+  if (command == 0x32) {  // get page count
     Serial.println(pageCount);
   }
-  if (command == 0x44) { // set current page
+  if (command == 0x44) {  // oled test parameters
     uint8_t oled_speed = readSerialAscii();
     uint8_t oled_delay = readSerialAscii();
     uint8_t pre_charge_period = readSerialAscii();

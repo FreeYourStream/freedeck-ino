@@ -17,5 +17,5 @@ void oledSetContrast(unsigned char ucContrast);
 static void oledSetPosition(int x, int y);
 static void oledWriteDataBlock(unsigned char *ucBuf, int iLen);
 int oledSetPixel(int x, int y, unsigned char ucColor);
-void oledLoadBMPPart(uint8_t *pBMP, int bytes = 1024, int offset = 0);
+void oledLoadBMPPart(uint8_t *pBMP, int bytes, int offset);
 void oledFill(unsigned char ucData);
