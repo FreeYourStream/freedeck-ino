@@ -1,5 +1,6 @@
 #include "./FreeDeckSerialAPI.h"
 
+#include <Arduino.h>
 #include <HID-Project.h>
 #include <limits.h>
 
@@ -60,7 +61,7 @@ void _saveNewConfigFileFromSerial() {
       ellapsed = millis();
     receivedBytes += chunkLength;
     configFile.write(input, chunkLength);
-  } while (chunkLength == SERIAL_RX_BUFFER_SIZE && receivedBytes < fileSize);
+  } while (receivedBytes < fileSize);
   if (receivedBytes == fileSize) {
     _renameTempFileToConfigFile(CONFIG_NAME);
   }
