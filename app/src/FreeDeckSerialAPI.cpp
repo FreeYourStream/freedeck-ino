@@ -48,15 +48,17 @@ void _saveNewConfigFileFromSerial() {
   long fileSize = _getSerialFileSize();
 
   long receivedBytes = 0;
+  uint32_t ellapsed = millis();
   unsigned int chunkLength;
   do {
+    if (millis() - ellapsed > 1000) {
+      break;
+    }
     byte input[SERIAL_RX_BUFFER_SIZE];
     chunkLength = Serial.readBytes(input, SERIAL_RX_BUFFER_SIZE);
-    if (chunkLength == 0)
-      break;
+    if (chunkLength)
+      ellapsed = millis();
     receivedBytes += chunkLength;
-    if (!(receivedBytes % 4096) || receivedBytes == fileSize)
-      Serial.println(receivedBytes);
     configFile.write(input, chunkLength);
   } while (chunkLength == SERIAL_RX_BUFFER_SIZE && receivedBytes < fileSize);
   if (receivedBytes == fileSize) {
