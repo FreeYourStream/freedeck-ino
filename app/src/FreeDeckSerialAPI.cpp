@@ -55,8 +55,8 @@ void _saveNewConfigFileFromSerial() {
     if (millis() - ellapsed > 1000) {
       break;
     }
-    byte input[SERIAL_RX_BUFFER_SIZE];
-    chunkLength = Serial.readBytes(input, SERIAL_RX_BUFFER_SIZE);
+    byte input[SERIAL_RX_BUFFER_SIZE * 2];
+    chunkLength = Serial.readBytes(input, SERIAL_RX_BUFFER_SIZE * 2);
     if (chunkLength)
       ellapsed = millis();
     receivedBytes += chunkLength;
