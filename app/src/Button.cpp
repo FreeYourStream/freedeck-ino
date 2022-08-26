@@ -1,23 +1,23 @@
 #include "./Button.h"
+
 #include "../settings.h"
 #define BUTTON_DOWN 0
 #define BUTTON_UP 1
-typedef void (*CallbackType)(uint8_t index, uint8_t secondary);
 
 void Button::update(bool new_state) {
   // if the button is being held down and we are waiting for
   // the secondary function to fire
-  if (state == BUTTON_UP && new_state == BUTTON_DOWN) { // getting pressed down
+  if (state == BUTTON_UP && new_state == BUTTON_DOWN) {  // getting pressed down
     state = new_state;
-    if (hasSecondary) {
+    if (has_secondary) {
       // to decide if we need to execute long or short press
       // start couting for how long we press the button
       pressedSince = millis();
     } else {
       callShortPress();
     }
-  } else if (state == BUTTON_DOWN && state == new_state) { // still being pressed down
-    if (!hasSecondary || pressExecuted)
+  } else if (state == BUTTON_DOWN && state == new_state) {  // still being pressed down
+    if (!has_secondary || pressExecuted)
       return;
 
     uint32_t now = millis();
@@ -29,9 +29,9 @@ void Button::update(bool new_state) {
     delay(100);
     callLongRelease();
 
-  } else if (state == BUTTON_DOWN && new_state == BUTTON_UP) { // getting released
+  } else if (state == BUTTON_DOWN && new_state == BUTTON_UP) {  // getting released
     state = new_state;
-    if (hasSecondary) {
+    if (has_secondary) {
       uint32_t now = millis();
       uint32_t passedTime = now - pressedSince;
       pressedSince = 0;

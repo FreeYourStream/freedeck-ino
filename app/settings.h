@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #define BD_COUNT 6
-
+#define ROW_SIZE 128
 // for ryan aukes 5x3 pcb layout or
 // if your screens are not in 1..n order
 // #define CUSTOM_ORDER
@@ -11,14 +11,15 @@
   { 12, 14, 6, 5, 2, 11, 13, 7, 4, 1, 10, 9, 8, 3, 0 }
 #endif
 
-#define TIMEOUT_TIME 0L // Screens turns never off
+#define TIMEOUT_TIME 0L  // Screens turns never off
 // #define TIMEOUT_TIME 5UL * 60UL * 1000UL // Screens turn off after 5 minutes;
 // #define WAKE_ON_GET_PAGE_SERIAL // will wake up the displays everytime you focus another window
-#define WAKE_ON_SET_PAGE_SERIAL // will only wake up the display if you focus a new window that has
-                                // a configurator page
+#define WAKE_ON_SET_PAGE_SERIAL  // will only wake up the display if you focus a new window that has
+                                 // a configurator page
 
 // ChipSelect pin for SD card spi
 #define SD_CS_PIN 10
+#define SD_MHZ 5
 
 // address pins for the multiplexers
 // ryan aukes 5x3 5,6,7,8,9
@@ -66,8 +67,8 @@
 
 // Pin or port numbers for SDA and SCL
 // NOT THE ARDUINO PORT NUMBERS
-#define BB_SDA 2 // ARDUINO:RX_PIN:D0 32U4:20:PD2
-#define BB_SCL 3 // ARDUINO:TX_PIN:D1 32U4:21:PD3
+#define BB_SDA 2  // ARDUINO:RX_PIN:D0 32U4:20:PD2
+#define BB_SCL 3  // ARDUINO:TX_PIN:D1 32U4:21:PD3
 
 #if F_CPU > 8000000L
 // the time to slow down for the displays
