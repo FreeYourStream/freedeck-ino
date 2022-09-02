@@ -95,6 +95,27 @@ unsigned long int readSerialBinary() {
   return number;
 }
 
+void oled_write_data() {
+  uint8_t display = readSerialBinary();
+  setMuxAddress(display, DISPLAY);
+  uint16_t received = 0;
+  unsigned char buffer[1024];
+  uint32_t ellapsed = millis();
+
+  do {
+    while (!Serial.available()) {
+      if (millis() - ellapsed > 1000) {
+        break;
+      }
+    };
+    ellapsed = millis();
+    uint8_t temp[IMG_CACHE_SIZE];
+    size_t len = Serial.readBytes(temp, IMG_CACHE_SIZE);
+    oledLoadBMPPart(temp, IMG_CACHE_SIZE, received);
+    received += len;
+  } while (received < 1024);
+}
+
 void handleAPI() {
   unsigned long command = readSerialBinary();
   if (command == 0x10) {  // get firmware version
@@ -141,6 +162,9 @@ void handleAPI() {
   }
   if (command == 0x32) {  // get page count
     Serial.println(pageCount);
+  }
+  if (command == 0x43) {
+    oled_write_data();
   }
   if (command == 0x44) {  // oled test parameters
     uint8_t oled_speed = readSerialAscii();

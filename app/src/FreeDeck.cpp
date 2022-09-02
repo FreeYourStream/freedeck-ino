@@ -173,6 +173,14 @@ void emit_button_press(uint8_t button_index, bool secondary) {
   Serial.println(f_size_str);
 }
 
+void emit_page_change(uint16_t page_index) {
+  Serial.write(0x3);
+  Serial.print("\r\n");
+  Serial.write(0x20);
+  Serial.print("\r\n");
+  Serial.println(page_index);
+}
+
 uint16_t get_target_page(uint8_t buttonIndex, uint8_t secondary) {
   configFile.seekSet((BD_COUNT * currentPage + buttonIndex + 1) * ROW_SIZE + (ROW_SIZE / 2) * secondary + 1);
   uint16_t pageIndex;
@@ -254,6 +262,7 @@ void load_images(uint16_t pageIndex) {
     setMuxAddress(buttonIndex, TYPE_DISPLAY);
     displayImage(pageIndex * BD_COUNT + buttonIndex);
   }
+  emit_page_change(pageIndex);
 }
 
 void load_buttons(uint16_t pageIndex) {
