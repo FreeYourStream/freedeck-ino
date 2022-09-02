@@ -1,12 +1,14 @@
 #include "./OledTurboLight.h"
-#include "../settings.h"
-#include "./FreeDeck.h"
+
 #include <Arduino.h>
 
+#include "../settings.h"
+#include "./FreeDeck.h"
+
 // some globals
-static int iScreenOffset; // current write offset of screen data
+static int iScreenOffset;  // current write offset of screen data
 static uint8_t oled_addr;
-static uint8_t bCache[MAX_CACHE] = {0x40}; // for faster character drawing
+static uint8_t bCache[MAX_CACHE] = {0x40};  // for faster character drawing
 static uint8_t bEnd = 1;
 static void oledWriteCommand(unsigned char c);
 
@@ -26,11 +28,11 @@ static inline void i2cByteOut(uint8_t b) {
     delayMicroseconds(oled_delay);
     I2C_CLK_LOW();
     b <<= 1;
-  }                                // for i
-                                   // ack bit
-  I2CPORT = bOld & ~(1 << BB_SDA); // set data low
+  }                                 // for i
+                                    // ack bit
+  I2CPORT = bOld & ~(1 << BB_SDA);  // set data low
   delayMicroseconds(oled_delay);
-  I2CPORT |= (1 << BB_SCL); // toggle clock
+  I2CPORT |= (1 << BB_SCL);  // toggle clock
   delayMicroseconds(oled_delay);
   I2C_CLK_LOW();
 } /* i2cByteOut() */
@@ -38,10 +40,10 @@ static inline void i2cByteOut(uint8_t b) {
 void i2cBegin(uint8_t addr) {
   I2CPORT |= ((1 << BB_SDA) + (1 << BB_SCL));
   I2CDDR |= ((1 << BB_SDA) + (1 << BB_SCL));
-  I2CPORT &= ~(1 << BB_SDA);               // data line low first
-  delayMicroseconds((oled_delay + 1) * 2); // compatibility reasons
-  I2CPORT &= ~(1 << BB_SCL);               // then clock line low is a START signal
-  i2cByteOut(addr << 1);                   // send the slave address
+  I2CPORT &= ~(1 << BB_SDA);                // data line low first
+  delayMicroseconds((oled_delay + 1) * 2);  // compatibility reasons
+  I2CPORT &= ~(1 << BB_SCL);                // then clock line low is a START signal
+  i2cByteOut(addr << 1);                    // send the slave address
 } /* i2cBegin() */
 
 void i2cWrite(uint8_t *pData, uint8_t bLen) {
@@ -50,7 +52,7 @@ void i2cWrite(uint8_t *pData, uint8_t bLen) {
 
   while (bLen--) {
     b = *pData++;
-    if (b == 0 || b == 0xff) { // special case can save time
+    if (b == 0 || b == 0xff) {  // special case can save time
       bOld &= ~(1 << BB_SDA);
       if (b & 0x80)
         bOld |= (1 << BB_SDA);
@@ -58,11 +60,11 @@ void i2cWrite(uint8_t *pData, uint8_t bLen) {
       delayMicroseconds(oled_delay);
       for (i = 0; i < 8; i++) {
         I2CPORT |=
-            (1 << BB_SCL); // just toggle SCL, SDA stays the same
+            (1 << BB_SCL);  // just toggle SCL, SDA stays the same
         delayMicroseconds(oled_delay);
         I2C_CLK_LOW();
-      }      // for i
-    } else { // normal uint8_t needs every bit tested
+      }       // for i
+    } else {  // normal uint8_t needs every bit tested
       for (i = 0; i < 8; i++) {
         bOld &= ~(1 << BB_SDA);
         if (b & 0x80)
@@ -74,14 +76,14 @@ void i2cWrite(uint8_t *pData, uint8_t bLen) {
         delayMicroseconds(oled_delay);
         I2C_CLK_LOW();
         b <<= 1;
-      } // for i
+      }  // for i
     }
     // ACK bit seems to need to be set to 0, but SDA
     // line doesn't need to be tri-state
     I2CPORT &= ~(1 << BB_SDA);
-    I2CPORT |= (1 << BB_SCL); // toggle clock
+    I2CPORT |= (1 << BB_SCL);  // toggle clock
     I2CPORT &= ~(1 << BB_SCL);
-  } // for each uint8_t
+  }  // for each uint8_t
 } /* i2cWrite() */
 
 //
@@ -113,8 +115,8 @@ void oledInit(uint8_t bAddr, uint8_t pre_charge_period, uint8_t refresh_frequenc
 
   oled_addr = bAddr;
   I2CDDR &= ~(1 << BB_SDA);
-  I2CDDR &= ~(1 << BB_SCL); // let them float high
-  I2CPORT |= (1 << BB_SDA); // set both lines to get pulled up
+  I2CDDR &= ~(1 << BB_SCL);  // let them float high
+  I2CPORT |= (1 << BB_SDA);  // set both lines to get pulled up
   I2CPORT |= (1 << BB_SCL);
 
   I2CWrite(oled_addr, oled_initbuf, sizeof(oled_initbuf));
@@ -135,14 +137,18 @@ void oledInit(uint8_t bAddr, uint8_t pre_charge_period, uint8_t refresh_frequenc
 // Sends a command to turn off the OLED display
 //
 void oledShutdown() {
-  oledWriteCommand(0xaE); // turn off OLED
+  oledWriteCommand(0xae);  // turn off OLED
+}
+
+void oledTurnOn() {
+  oledWriteCommand(0xaf);  // turn off OLED
 }
 
 // Send a single uint8_t command to the OLED controller
 static void oledWriteCommand(unsigned char c) {
   unsigned char buf[2];
 
-  buf[0] = 0x00; // command introducer
+  buf[0] = 0x00;  // command introducer
   buf[1] = c;
   I2CWrite(oled_addr, buf, 2);
 } /* oledWriteCommand() */
@@ -168,9 +174,9 @@ void oledSetContrast(unsigned char ucContrast) {
 // to the given row and column
 //
 static void oledSetPosition(int x, int y) {
-  oledWriteCommand(0xb0 | y);                // go to page Y
-  oledWriteCommand(0x00 | (x & 0xf));        // // lower col addr
-  oledWriteCommand(0x10 | ((x >> 4) & 0xf)); // upper col addr
+  oledWriteCommand(0xb0 | y);                 // go to page Y
+  oledWriteCommand(0x00 | (x & 0xf));         // // lower col addr
+  oledWriteCommand(0x10 | ((x >> 4) & 0xf));  // upper col addr
   iScreenOffset = (y * 128) + x;
 }
 
@@ -180,7 +186,7 @@ static void oledSetPosition(int x, int y) {
 //
 static void oledWriteDataBlock(unsigned char *ucBuf, int iLen) {
   unsigned char ucTemp[iLen + 1];
-  ucTemp[0] = 0x40; // data command
+  ucTemp[0] = 0x40;  // data command
   memcpy(&ucTemp[1], ucBuf, iLen);
   I2CWrite(oled_addr, ucTemp, iLen + 1);
   // Keep a copy in local buffer
@@ -194,7 +200,7 @@ int oledSetPixel(int x, int y, unsigned char ucColor) {
   unsigned char uc, ucOld;
 
   i = ((y >> 3) * 128) + x;
-  if (i < 0 || i > 1023) // off the screen
+  if (i < 0 || i > 1023)  // off the screen
     return -1;
 
   uc = ucOld = 0;
@@ -203,7 +209,7 @@ int oledSetPixel(int x, int y, unsigned char ucColor) {
   if (ucColor) {
     uc |= (0x1 << (y & 7));
   }
-  if (uc != ucOld) { // pixel changed
+  if (uc != ucOld) {  // pixel changed
     oledSetPosition(x, y >> 3);
     oledWriteDataBlock(&uc, 1);
   }
@@ -216,13 +222,13 @@ int oledSetPixel(int x, int y, unsigned char ucColor) {
 // First pass version assumes a full screen bitmap
 //
 void oledLoadBMPPart(uint8_t *pBMP, int bytes = 1024, int offset = 0) {
-  int y; // offset to bitmap data
+  int y;  // offset to bitmap data
   int iPitch = 128;
-  uint8_t factor = bytes / iPitch; // 512/128 = 4
+  uint8_t factor = bytes / iPitch;  // 512/128 = 4
   oledSetPosition(0, offset / 16 / 8);
-  for (y = 0; y < factor; y++) { // 8 lines of 8 pixels
+  for (y = 0; y < factor; y++) {  // 8 lines of 8 pixels
     oledWriteDataBlock(&pBMP[y * iPitch], iPitch);
-  } // for y
+  }  // for y
   // oledCachedFlush();
 } /* oledLoadBMP() */
 //
@@ -235,9 +241,9 @@ void oledFill(unsigned char ucData) {
 
   memset(temp, ucData, 16);
   for (y = 0; y < 8; y++) {
-    oledSetPosition(0, y); // set to (0,Y)
+    oledSetPosition(0, y);  // set to (0,Y)
     for (x = 0; x < 8; x++) {
       oledWriteDataBlock(temp, 16);
-    } // for x
-  }   // for y
+    }  // for x
+  }    // for y
 }

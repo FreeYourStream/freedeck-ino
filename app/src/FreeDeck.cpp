@@ -346,11 +346,15 @@ void switchScreensOff() {
   for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
     setMuxAddress(buttonIndex, TYPE_DISPLAY);
     delay(1);
-    oledFill(0);
+    oledShutdown();
   }
 }
 
 void switchScreensOn() {
+  for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
+    setMuxAddress(buttonIndex, TYPE_DISPLAY);
+    delay(1);
+    oledTurnOn();
+  }
   last_action = millis();
-  loadPage(currentPage);
 }
