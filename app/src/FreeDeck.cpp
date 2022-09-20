@@ -258,11 +258,11 @@ void onButtonRelease(uint8_t buttonIndex, uint8_t secondary) {
 }
 
 void load_images(uint16_t pageIndex) {
+  emit_page_change(pageIndex);
   for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
     setMuxAddress(buttonIndex, TYPE_DISPLAY);
     displayImage(pageIndex * BD_COUNT + buttonIndex);
   }
-  emit_page_change(pageIndex);
 }
 
 void load_buttons(uint16_t pageIndex) {
