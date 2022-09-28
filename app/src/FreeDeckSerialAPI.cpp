@@ -96,6 +96,7 @@ unsigned long int readSerialBinary() {
 }
 
 void oled_write_data() {
+  last_data_received = millis();
   uint8_t display = readSerialBinary();
   setMuxAddress(display, DISPLAY);
   uint16_t received = 0;

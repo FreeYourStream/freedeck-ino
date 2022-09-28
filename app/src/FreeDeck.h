@@ -7,6 +7,7 @@
 extern uint16_t currentPage;
 extern uint16_t pageCount;
 extern uint16_t timeout_sec;
+extern uint32_t last_data_received;
 extern File configFile;
 extern SdFat SD;
 extern unsigned long last_action;

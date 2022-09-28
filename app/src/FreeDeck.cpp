@@ -16,6 +16,7 @@ SdFat SD;
 File configFile;
 Button buttons[BD_COUNT];
 
+uint32_t last_data_received = 0;
 uint16_t currentPage = 0;
 uint16_t nextPage = 0;
 uint16_t pageCount;
@@ -195,7 +196,12 @@ void pressSpecialKey() {
 }
 
 void displayImage(uint16_t imageNumber) {
-  configFile.seekSet(fileImageDataOffset + imageNumber * 1024L);
+  configFile.seekSet(fileImageDataOffset + imageNumber * 1025L);
+  uint8_t has_live_data;
+  has_live_data = configFile.read();
+  if (has_live_data == 1 && (millis() - last_data_received) < 2000)
+    return;
+  configFile.seekSet(fileImageDataOffset + imageNumber * 1025L);
   uint8_t byteI = 0;
   while (configFile.available() && byteI < (1024 / IMG_CACHE_SIZE)) {
     configFile.read(imageCache, IMG_CACHE_SIZE);
