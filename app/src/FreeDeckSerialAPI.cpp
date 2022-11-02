@@ -155,7 +155,7 @@ void handleAPI() {
     if (targetPage <= pageCount) {
       Keyboard.releaseAll();
       Consumer.releaseAll();
-      loadPage(targetPage);
+      loadPage(targetPage, false);
     }
 #ifdef WAKE_ON_SET_PAGE_SERIAL
     wake_display_if_needed();
@@ -173,7 +173,7 @@ void handleAPI() {
     uint8_t pre_charge_period = readSerialAscii();
     uint8_t refresh_frequency = readSerialAscii();
     initAllDisplays(oled_delay, pre_charge_period, refresh_frequency);
-    loadPage(currentPage);
+    loadPage(currentPage, false);
     setGlobalContrast(contrast);
   }
 }

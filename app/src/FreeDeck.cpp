@@ -71,9 +71,9 @@ void setMuxAddress(uint8_t address, uint8_t type = TYPE_DISPLAY) {
   delay(1);  // wait for multiplexer to switch
 }
 
-void loadPage(uint16_t pageIndex) {
+void loadPage(uint16_t pageIndex, bool force_load_images) {
   currentPage = pageIndex;
-  load_images(pageIndex);
+  load_images(pageIndex, force_load_images);
   load_buttons(pageIndex);
 }
 
@@ -195,11 +195,11 @@ void pressSpecialKey() {
   Consumer.press((ConsumerKeycode)key);
 }
 
-void displayImage(uint16_t imageNumber) {
+void displayImage(uint16_t imageNumber, bool force) {
   configFile.seekSet(fileImageDataOffset + imageNumber * 1025L);
   uint8_t has_live_data;
   has_live_data = configFile.read();
-  if (has_live_data == 1 && (millis() - last_data_received) < 2000)
+  if (!force && has_live_data == 1 && (millis() - last_data_received) < 2000)
     return;
   configFile.seekSet(fileImageDataOffset + imageNumber * 1025L);
   uint8_t byteI = 0;
@@ -227,7 +227,7 @@ void onButtonPress(uint8_t button_index, uint8_t secondary) {
     press_keys();
   } else if (command == 1) {
     nextPage = get_target_page(button_index, secondary);
-    load_images(nextPage);
+    load_images(nextPage, false);
   } else if (command == 3) {
     pressSpecialKey();
   } else if (command == 4) {
@@ -259,15 +259,15 @@ void onButtonRelease(uint8_t buttonIndex, uint8_t secondary) {
   uint16_t page_index;
   configFile.read(&page_index, 2);
   if (page_index > 0) {
-    loadPage(page_index - 1);
+    loadPage(page_index - 1, false);
   }
 }
 
-void load_images(uint16_t pageIndex) {
+void load_images(uint16_t pageIndex, bool force) {
   emit_page_change(pageIndex);
   for (uint8_t buttonIndex = 0; buttonIndex < BD_COUNT; buttonIndex++) {
     setMuxAddress(buttonIndex, TYPE_DISPLAY);
-    displayImage(pageIndex * BD_COUNT + buttonIndex);
+    displayImage(pageIndex * BD_COUNT + buttonIndex, force);
   }
 }
 
@@ -337,7 +337,7 @@ void postSetup() {
   loadConfigFile();
   initAllDisplays(oled_delay, pre_charge_period, refresh_frequency);
   setGlobalContrast(contrast);
-  loadPage(0);
+  loadPage(0, true);
 }
 
 void sleepTask() {
